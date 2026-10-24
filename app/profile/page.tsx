@@ -31,35 +31,13 @@ import {
   Tag,
   AlertCircle,
   Cpu,
+  ShieldCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { FiGitBranch, FiShield } from "react-icons/fi";
 
-// Mapping helpers to match onboarding labels
-const USE_CASE_MAP: Record<string, string> = {
-  personal: "Personal Projects",
-  freelance: "Freelance / Agency",
-  startup: "Startup / SaaS",
-  enterprise: "Enterprise Systems",
-  education: "Academic & Training",
-};
 
-const TEAM_SIZE_MAP: Record<string, string> = {
-  "1": "Solo Workspace",
-  "2-10": "Squad (2-10 Builders)",
-  "11-50": "Growth (11-50 Builders)",
-  "51-200": "Enterprise Segment (51-200)",
-  "200+": "Global Enterprise Core (200+)",
-};
-
-const FIELD_MAP: Record<string, string> = {
-  "web-dev": "Web Engineering",
-  "mobile-dev": "Mobile Apps",
-  "data-science": "AI & Data Systems",
-  design: "Creative & UI Design",
-  marketing: "Growth & Analytics",
-  student: "Computer Science Study",
-};
 
 // Map languages to aesthetic colors
 const LANGUAGE_COLOR_MAP: Record<string, string> = {
@@ -98,9 +76,6 @@ export default function ProfilePage() {
     email: user?.email || "",
     username: user?.email?.split("@")[0] || "dev",
     githubId: "unknown",
-    useCase: "individual",
-    teamSize: "1",
-    fieldOfWork: "other",
     photoURL: user?.photoURL || "",
     repositories: [],
     createdAt: "",
@@ -165,6 +140,9 @@ export default function ProfilePage() {
   const uniqueLanguages = Array.from(
     new Set(repositories.map((r) => r.language).filter(Boolean)),
   ) as string[];
+
+  const publicReposCount = repositories.filter((r) => !r.private).length;
+  const privateReposCount = repositories.filter((r) => r.private).length;
 
   // Filter repos based on search and language dropdown
   const filteredRepos = repositories.filter((repo) => {
@@ -397,72 +375,88 @@ export default function ProfilePage() {
                 </Card>
               </motion.div>
 
-              {/* RIGHT PANEL: Workspace Configuration Card */}
+              {/* RIGHT PANEL: Repository & Workspace Overview Card */}
               <motion.div variants={itemVariants} className="lg:col-span-6">
                 <Card className="h-full bg-zinc-900/10 border-zinc-800/80 backdrop-blur-2xl p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl" />
                   <div className="space-y-6">
                     <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
                       <CardTitle className="flex items-center gap-2.5 text-xs font-mono tracking-wider uppercase text-zinc-400">
-                        <Briefcase className="w-4 h-4 text-zinc-500" />
-                        Workspace Profile
+                        <FolderGit2 className="w-4 h-4 text-blue-500" />
+                        Repository Telemetry
                       </CardTitle>
+                      <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">
+                        {repositories.length} Total
+                      </span>
                     </div>
 
-                    <div className="space-y-5">
-                      <div className="flex gap-4 items-start p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl">
-                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                          <Layers className="w-4 h-4" />
+                    <div className="space-y-4">
+                      <div className="flex gap-4 items-center p-3.5 bg-zinc-950/30 border border-zinc-850 rounded-xl">
+                        <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                          <FiGitBranch className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-                            Workspace Purpose
-                          </h4>
-                          <p className="text-sm font-semibold text-white mt-0.5">
-                            {USE_CASE_MAP[profile.useCase] ||
-                              profile.useCase ||
-                              "Personal Development"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4 items-start p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl">
-                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                          <UserIcon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-                            Collaborator scale
-                          </h4>
-                          <p className="text-sm font-semibold text-white mt-0.5">
-                            {TEAM_SIZE_MAP[profile.teamSize] ||
-                              profile.teamSize ||
-                              "Solo Development"}
-                          </p>
+                        <div className="flex-1 flex items-center justify-between">
+                          <div>
+                            <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
+                              Public Repositories
+                            </h4>
+                            <p className="text-sm font-semibold text-white mt-0.5">
+                              {publicReposCount} Published
+                            </p>
+                          </div>
+                          <span className="text-xs font-mono text-zinc-500">
+                            {repositories.length > 0
+                              ? Math.round((publicReposCount / repositories.length) * 100)
+                              : 0}%
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex gap-4 items-start p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl">
-                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                      <div className="flex gap-4 items-center p-3.5 bg-zinc-950/30 border border-zinc-850 rounded-xl">
+                        <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                          <FiShield className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 flex items-center justify-between">
+                          <div>
+                            <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
+                              Private Repositories
+                            </h4>
+                            <p className="text-sm font-semibold text-white mt-0.5">
+                              {privateReposCount} Secured
+                            </p>
+                          </div>
+                          <span className="text-xs font-mono text-zinc-500">
+                            {repositories.length > 0
+                              ? Math.round((privateReposCount / repositories.length) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 items-center p-3.5 bg-zinc-950/30 border border-zinc-850 rounded-xl">
+                        <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                           <Code2 className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-                            Main tech stack domain
-                          </h4>
-                          <p className="text-sm font-semibold text-white mt-0.5">
-                            {FIELD_MAP[profile.fieldOfWork] ||
-                              (profile.fieldOfWork
-                                ? profile.fieldOfWork.replace("-", " ")
-                                : "Web Engineering")}
-                          </p>
+                        <div className="flex-1 flex items-center justify-between">
+                          <div>
+                            <h4 className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
+                              Languages Indexed
+                            </h4>
+                            <p className="text-sm font-semibold text-white mt-0.5">
+                              {uniqueLanguages.length} Active Stacks
+                            </p>
+                          </div>
+                          <span className="text-xs font-mono text-zinc-500">
+                            Multi-Stack
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-zinc-800/50 mt-6 text-[9px] text-zinc-600 font-mono">
-                    Parameters synced from the local provisioning portal.
+                  <div className="pt-6 border-t border-zinc-800/50 mt-6 text-[9px] text-zinc-600 font-mono flex items-center justify-between">
+                    <span>Synchronized with GitHub OAuth Token</span>
+                    <span className="text-emerald-500 font-bold">Active</span>
                   </div>
                 </Card>
               </motion.div>

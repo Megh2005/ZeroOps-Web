@@ -19,7 +19,7 @@ export default function Page() {
 
   const redirectHandler = () => {
     if (user) {
-      router.push("/dashboard");
+      router.push("/profile");
     } else {
       router.push("/auth");
     }

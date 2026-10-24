@@ -283,7 +283,7 @@ function AiBuilderContent() {
         <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/40">
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => router.push("/dashboard")} 
+              onClick={() => router.push("/profile")} 
               className="p-1.5 hover:bg-zinc-850 rounded-lg text-zinc-400 hover:text-zinc-150 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />

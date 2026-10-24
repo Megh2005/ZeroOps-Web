@@ -110,7 +110,7 @@ export default function CommitsPage() {
     if (deletingId) return;
 
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this commit log from your dashboard? This will not affect the commit on GitHub, only clear the log here.",
+      "Are you sure you want to delete this commit log from your ledger? This will not affect the commit on GitHub, only clear the log here.",
     );
     if (!confirmDelete) return;
 
@@ -121,7 +121,7 @@ export default function CommitsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Commit log cleared from dashboard");
+        toast.success("Commit log cleared from ledger");
         setCommits((prev) => prev.filter((c) => c.id !== commitId));
       } else {
         toast.error(data.error || "Failed to delete commit log");
@@ -165,7 +165,7 @@ export default function CommitsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/60 pb-6">
           <div>
             <h1 className="text-3xl font-extrabold  text-zinc-100 flex items-center gap-2.5">
-              <GitCommit className="w-8 h-8 text-blue-500" /> Commit Dashboard
+              <GitCommit className="w-8 h-8 text-blue-500" /> Commit Ledger
             </h1>
             <p className="text-sm text-zinc-400 mt-1.5">
               Track, review, or roll back code pushed directly to GitHub.

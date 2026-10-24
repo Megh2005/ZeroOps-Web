@@ -44,7 +44,7 @@ export default function AuthPage() {
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("github", { callbackUrl: "/onboarding" });
+      await signIn("github", { callbackUrl: "/profile" });
     } catch (error) {
       console.error("Sign in failed", error);
     } finally {

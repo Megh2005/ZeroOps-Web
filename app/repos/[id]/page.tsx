@@ -284,7 +284,7 @@ export default function RepositoryDetailPage() {
       const data = await res.json();
       if (data.success) {
         toast.success("Repository deleted successfully!", { id: toastId });
-        router.push("/dashboard");
+        router.push("/profile");
       } else {
         toast.error(data.error || "Failed to delete repository.", {
           id: toastId,
