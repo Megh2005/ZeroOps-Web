@@ -12,7 +12,7 @@ export interface Floating3DParticlesProps extends Omit<
    * Number of particles rendered on desktop viewports.
    * On mobile screens (< 768px), particle count automatically scales down
    * to 20 % to preserve smooth frame rates.
-   * @default 1000
+   * @default 2000
    */
   quantity?: number
   /**
@@ -23,25 +23,25 @@ export interface Floating3DParticlesProps extends Omit<
   /**
    * Mean particle radius in px. Each particle is randomly assigned a size
    * within ±40 % of this value.
-   * @default 10
+   * @default 30
    */
   size?: number
   /**
    * Mean particle opacity (0–1). Each particle randomly varies within
    * ±0.2 of this value, clamped to [0, 1].
-   * @default 0.7
+   * @default 0.9
    */
   opacity?: number
   /**
    * Vertical floating speed in px per frame. Positive values drift upward,
    * negative values downward.
-   * @default 1.0
+   * @default 2.0
    */
   drift?: number
   /**
    * 3-D depth intensity on a 0–1 scale. `0` produces a flat 2D plane; `1`
    * creates strong perspective with pronounced near/far scaling.
-   * @default 0.5
+   * @default 0.8
    */
   depth?: number
 }
@@ -67,7 +67,7 @@ interface Particle {
 // ---------------------------------------------------------------------------
 
 const MOBILE_BREAKPOINT = 768
-const SPREAD_FACTOR = 1.2
+const SPREAD_FACTOR = 2.0
 const MAX_DPR = 2
 
 function hexToRgba(hex: string, alpha: number) {
