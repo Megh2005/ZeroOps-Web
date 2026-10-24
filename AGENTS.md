@@ -16,7 +16,7 @@
 ### Key Technological Pillars:
 - **Framework**: Next.js 16 (App Router, Turbopack, Standalone Output) + React 19 + TypeScript.
 - **Styling**: Tailwind CSS v4, PostCSS, OKLCH color palettes, custom gradients, Framer Motion animations.
-- **Typography**: Google Font Outfit (`--font-outfit`).
+- **Typography**: Google Font Roboto Slab (`Roboto_Slab`, `--font-roboto-slab`).
 - **AI Engine**: Google Gemini API (`@google/generative-ai`), default model `gemini-3.1-flash-lite` (configured in `lib/gemini.ts`).
 - **Database & State**: Google Firebase Firestore (Collections: `users`, `deployments`, `commits`).
 - **Authentication**: NextAuth.js v4 with GitHub Provider (scopes: `read:user`, `user:email`, `repo`).
@@ -92,14 +92,13 @@ ZeroOps/
 │   ├── commits/page.tsx                  # Commit timeline, code diffs, and instant rollback
 │   ├── dashboard/page.tsx                # Central Hub: Repositories, metrics, activity, quick-launch
 │   ├── devops/page.tsx                   # Multi-Cloud Terraform Migrator & GCP Architecture Suggester
-│   ├── devops-bot/page.tsx               # "LearnON" AI DevOps Mentor Chatbot
 │   ├── docs/page.tsx                     # ZeroOps platform documentation & guides
 │   ├── onboarding/page.tsx               # 3-step User Onboarding: Use case, Team size, Domain
 │   ├── profile/page.tsx                  # User Profile & GCP Account Link Management
 │   ├── repos/[id]/page.tsx               # Repo Explorer: File tree, markdown viewer, file editor
 │   ├── terraform-view/page.tsx           # Terraform Studio: Inspect, Sandbox Test, AI Debug, Live Deploy
 │   ├── globals.css                       # Global CSS, Tailwind theme variables, OKLCH tokens
-│   ├── layout.tsx                        # Root layout, Google Font Outfit, Toast provider, AuthGuard
+│   ├── layout.tsx                        # Root layout, Google Font Roboto Slab, Toast provider, AuthGuard
 │   └── page.tsx                          # Public Landing Page & Feature Showcase
 ├── components/
 │   ├── ui/                               # Radix UI + Tailwind primitive components
@@ -108,11 +107,10 @@ ZeroOps/
 │   │   ├── button.tsx                    # Button with variants (default, outline, ghost, destructive)
 │   │   ├── card.tsx                      # Card, CardHeader, CardTitle, CardContent
 │   │   ├── dropdown-menu.tsx             # Popover dropdowns
+│   │   ├── floating-3d-particles.tsx     # 3D canvas particle hero animation
 │   │   ├── input.tsx                     # Form text input
 │   │   ├── label.tsx                     # Form field label
 │   │   ├── select.tsx                    # Select trigger and options
-│   │   ├── sonner.tsx                    # Toast notifications
-│   │   ├── tabs.tsx                      # Tab navigation
 │   │   └── textarea.tsx                  # Multi-line text input
 │   ├── architecture-builder.tsx          # Canvas orchestrator, component state, auto-save
 │   ├── auth-guard.tsx                    # Route protection, onboarding redirection logic
@@ -124,9 +122,9 @@ ZeroOps/
 │   ├── config-panel.tsx                  # Side drawer for configuring selected node properties
 │   ├── connection-line.tsx               # SVG Bezier curve connecting two architecture nodes
 │   ├── markdown-renderer.tsx             # Markdown parser with syntax highlighting & card groups
+│   ├── navigation-dock.tsx               # Universal bottom navigation pill dock with large react-icons
 │   ├── sandbox-console.tsx               # Embedded Xterm.js terminal for Docker sandbox output
 │   ├── sidebar.tsx                       # GCP component category picker (Compute, Storage, Network, etc.)
-│   ├── site-header.tsx                   # Fixed global navigation header with user profile menu
 │   ├── theme-provider.tsx                # Dark / Light theme provider (ZeroOps is optimized for Dark)
 │   ├── toolbar.tsx                       # Canvas top toolbar: Validation, Cost, Terraform export
 │   └── validation-modal.tsx              # Architecture linting modal showing errors & warnings
@@ -181,11 +179,10 @@ Powered by Google Gemini (`gemini-3.1-flash-lite`). Functions:
 2. `getArchitecturalSuggestions(description)`: Takes user requirements and outputs recommended GCP services with text-based ASCII architecture diagrams.
 3. `validateTerraform(code)`: Fast structural validation; checks cost optimizations and flags `COST_OPTIMIZATION_REQUIRED`.
 4. `optimizeTerraform(code, strategies)`: Returns raw JSON `{ "optimizedCode": "...", "tips": "..." }` stripping comments and applying selected cost-saving techniques.
-5. `chatWithDevOpsBot(message, history)`: Mentors users on GCP DevOps concepts in layman's terms.
-6. `terraformToArchitecture(code)`: Reverse-engineers raw Terraform HCL into `{ components, connections }` JSON for canvas visualization.
-7. `migrateTerraform(code, fromCloud, toCloud)`: Translates AWS/DigitalOcean Terraform into Google Cloud Terraform HCL.
-8. `chatAboutArchitecture(message, components, connections, history)`: Interactive canvas chatbot evaluating active canvas layout.
-9. `generateArchitectureFromPrompt(prompt, history, components, connections)`: Synthesizes or iteratively edits visual components and connections from natural language.
+5. `terraformToArchitecture(code)`: Reverse-engineers raw Terraform HCL into `{ components, connections }` JSON for canvas visualization.
+6. `migrateTerraform(code, fromCloud, toCloud)`: Translates AWS/DigitalOcean Terraform into Google Cloud Terraform HCL.
+7. `chatAboutArchitecture(message, components, connections, history)`: Interactive canvas chatbot evaluating active canvas layout.
+8. `generateArchitectureFromPrompt(prompt, history, components, connections)`: Synthesizes or iteratively edits visual components and connections from natural language.
 
 ### 4.4 Local Docker Sandbox Engine (`lib/sandbox.ts` & `Dockerfile.sandbox`)
 - Runs `dockerode` communicating with the local Docker daemon:
@@ -253,7 +250,7 @@ Powered by Google Gemini (`gemini-3.1-flash-lite`). Functions:
    - **NEVER** use Sparkles or magic wand icons.
 2. **Component Customization**:
    - Retain dark mode styling (`bg-[#050505]`, `bg-[#09090b]`, `border-white/10`, `text-zinc-100`).
-   - Use `Outfit` typography (`font-sans`).
+   - Use `Roboto Slab` typography exclusively throughout the entire website.
    - Ensure interactive buttons have feedback (`hover:opacity-80`, `active:scale-95`, or Framer Motion tap animations).
 3. **TypeScript Types**:
    - Always reference types from `@/types/architecture` for canvas objects.

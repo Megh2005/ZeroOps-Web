@@ -1,24 +1,25 @@
 "use client";
 
-import { useState, useRef, forwardRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import { migrateTerraform, getArchitecturalSuggestions } from "@/lib/gemini";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Loader2,
-  Cloud,
-  Terminal,
-  CheckCircle2,
-  Sparkles,
-  ArrowRight,
-  Activity,
-  Printer,
-  Upload,
-  Download,
-  Github
-} from "lucide-react";
-import { SiteHeader } from "@/components/site-header";
+  FiLoader,
+  FiCloud,
+  FiTerminal,
+  FiCheckCircle,
+  FiCpu,
+  FiArrowRight,
+  FiActivity,
+  FiPrinter,
+  FiUpload,
+  FiDownload,
+} from "react-icons/fi";
+import { FaGithub } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -27,20 +28,27 @@ import { useAuth } from "@/components/auth-provider";
 
 const CLOUD_OPTIONS = ["AWS", "GCP", "Digital Ocean"];
 
-const PrintableReport = forwardRef<HTMLDivElement, { title: string; content: string }>(({ title, content }, ref) => {
+const PrintableReport = forwardRef<
+  HTMLDivElement,
+  { title: string; content: string }
+>(({ title, content }, ref) => {
   return (
     <div ref={ref} className="p-16 bg-white text-black min-h-screen font-sans">
       <div className="border-b-2 border-black pb-8 mb-10 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-black mb-1">ZEROOPS CORE</h1>
-          <p className="text-sm text-gray-500 font-mono uppercase tracking-widest">Enterprise Infrastructure Report</p>
+          <h1 className="text-4xl font-bold  text-black mb-1">ZEROOPS CORE</h1>
+          <p className="text-sm text-gray-500 font-mono uppercase tracking-widest">
+            Enterprise Infrastructure Report
+          </p>
         </div>
         <div className="text-right text-xs text-gray-500 font-mono uppercase tracking-widest">
           {new Date().toLocaleDateString()} <br />
           {new Date().toLocaleTimeString()}
         </div>
       </div>
-      <h2 className="text-2xl font-bold text-black mb-8 border-b border-gray-200 pb-4">{title}</h2>
+      <h2 className="text-2xl font-bold text-black mb-8 border-b border-gray-200 pb-4">
+        {title}
+      </h2>
       <div className="prose prose-sm max-w-none prose-headings:text-black prose-p:text-gray-800 prose-li:text-gray-800 prose-strong:text-black prose-code:text-blue-700 font-sans leading-relaxed">
         <MarkdownRenderer content={content} isPrint={true} />
       </div>
@@ -54,7 +62,18 @@ PrintableReport.displayName = "PrintableReport";
 
 export default function DevOpsPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<"terraform" | "architecture" | "migrator">("migrator");
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor =
+    mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
+  const [activeTab, setActiveTab] = useState<
+    "terraform" | "architecture" | "migrator"
+  >("migrator");
   const [fromCloud, setFromCloud] = useState("AWS");
   const [toCloud, setToCloud] = useState("GCP");
   const [terraformCode, setTerraformCode] = useState("");
@@ -157,7 +176,9 @@ export default function DevOpsPage() {
     const sectionIndex = md.indexOf("## Migrated Code");
     if (sectionIndex === -1) return "";
     const afterSection = md.substring(sectionIndex);
-    const codeBlockMatch = afterSection.match(/```(?:hcl|terraform)?([\s\S]*?)```/);
+    const codeBlockMatch = afterSection.match(
+      /```(?:hcl|terraform)?([\s\S]*?)```/,
+    );
     return codeBlockMatch ? codeBlockMatch[1].trim() : "";
   };
 
@@ -201,55 +222,66 @@ export default function DevOpsPage() {
       const data = await res.json();
       if (data.success) {
         if (data.modified) {
-          toast.success(`Successfully modified and updated ${targetFilePath} on branch ${pushBranch}!`, { id: toastId });
+          toast.success(
+            `Successfully modified and updated ${targetFilePath} on branch ${pushBranch}!`,
+            { id: toastId },
+          );
         } else {
-          toast.success(`Successfully pushed new ${targetFilePath} on branch ${pushBranch}!`, { id: toastId });
+          toast.success(
+            `Successfully pushed new ${targetFilePath} on branch ${pushBranch}!`,
+            { id: toastId },
+          );
         }
       } else {
         toast.error(data.error || "Failed to push to GitHub.", { id: toastId });
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred while pushing to GitHub.", { id: toastId });
+      toast.error("An error occurred while pushing to GitHub.", {
+        id: toastId,
+      });
     } finally {
       setIsPushing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-zinc-500/30">
-      <SiteHeader />
+    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-zinc-500/30 relative overflow-hidden">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
 
-      <main className="relative z-10 pt-32 pb-20 w-[80vw] mx-auto px-0">
+      <main className="relative z-10 pt-10 pb-32 w-[80vw] mx-auto px-0">
         <div className="flex flex-col items-center text-center space-y-4 mb-16 mt-10">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-zinc-400 shadow-sm mx-auto">
-              <Activity className="h-3 w-3 text-blue-500" />
+            <div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-zinc-400 shadow-sm mx-auto">
+              <FiActivity className="h-3 w-3 text-blue-500" />
               <span>System Intelligence Core</span>
             </div>
-            <h1 className="text-4xl font-semibold tracking-tight md:text-6xl mb-6 text-zinc-100">
+            <h1 className="text-4xl font-semibold  md:text-6xl mb-6 text-zinc-100">
               Cloud Infrastructure <br />
-              <span className="text-zinc-500">
-                Migration Core
-              </span>
+              <span className="text-zinc-500">Migration Core</span>
             </h1>
             <p className="text-xs font-mono text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-              Orchestrate multi-cloud topologies and translate provider states utilizing our advanced cognitive translator.
+              Orchestrate multi-cloud topologies and translate provider states
+              utilizing our advanced cognitive translator.
             </p>
           </motion.div>
         </div>
 
         {/* Custom Tab Switcher */}
         <div className="flex justify-center mb-12">
-          <div className="flex p-1 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800/80 rounded">
+          <div className="flex p-1 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800/80 rounded-xl">
             <button
               onClick={() => setActiveTab("migrator")}
               className={cn(
-                "relative px-8 py-2 rounded text-xs font-semibold transition-all duration-300",
+                "relative px-8 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer active:scale-95",
                 activeTab === "migrator"
                   ? "text-zinc-900"
                   : "text-zinc-400 hover:text-zinc-300",
@@ -258,18 +290,18 @@ export default function DevOpsPage() {
               {activeTab === "migrator" && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-zinc-100 rounded"
+                  className="absolute inset-0 bg-zinc-100 rounded-lg"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-2">
-                <Terminal className="w-4 h-4" /> Cloud Migrator
+                <FiTerminal className="w-4 h-4" /> Cloud Migrator
               </span>
             </button>
             <button
               onClick={() => setActiveTab("architecture")}
               className={cn(
-                "relative px-8 py-2 rounded text-xs font-semibold transition-all duration-300",
+                "relative px-8 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer active:scale-95",
                 activeTab === "architecture"
                   ? "text-zinc-900"
                   : "text-zinc-400 hover:text-zinc-300",
@@ -278,12 +310,12 @@ export default function DevOpsPage() {
               {activeTab === "architecture" && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-zinc-100 rounded"
+                  className="absolute inset-0 bg-zinc-100 rounded-lg"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-2">
-                <Cloud className="w-4 h-4" /> Topology Architect
+                <FiCloud className="w-4 h-4" /> Topology Architect
               </span>
             </button>
           </div>
@@ -303,11 +335,12 @@ export default function DevOpsPage() {
                 <div className="p-6 md:p-8 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-xl font-semibold tracking-tight text-zinc-100">
+                      <h3 className="text-xl font-semibold  text-zinc-100">
                         Terraform Cloud Migrator
                       </h3>
                       <p className="text-xs font-mono text-zinc-500 mt-1">
-                        Select clouds, upload your Terraform configuration, and convert providers instantly.
+                        Select clouds, upload your Terraform configuration, and
+                        convert providers instantly.
                       </p>
                     </div>
 
@@ -323,9 +356,9 @@ export default function DevOpsPage() {
                         onClick={() => fileInputRef.current?.click()}
                         variant="outline"
                         size="sm"
-                        className="border-zinc-800 bg-zinc-950/40 text-zinc-300 hover:bg-zinc-800 hover:text-white font-mono text-xs h-9 flex items-center gap-2"
+                        className="gap-2 font-mono text-xs"
                       >
-                        <Upload className="w-3.5 h-3.5" />
+                        <FiUpload className="w-3.5 h-3.5" />
                         Upload .tf File
                       </Button>
                     </div>
@@ -343,14 +376,17 @@ export default function DevOpsPage() {
                           const val = e.target.value;
                           setFromCloud(val);
                           if (val === toCloud) {
-                            const other = CLOUD_OPTIONS.find(o => o !== val) || "GCP";
+                            const other =
+                              CLOUD_OPTIONS.find((o) => o !== val) || "GCP";
                             setToCloud(other);
                           }
                         }}
                         className="w-full h-10 px-3 bg-zinc-900 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none"
                       >
-                        {CLOUD_OPTIONS.map(opt => (
-                          <option key={`from-${opt}`} value={opt}>{opt}</option>
+                        {CLOUD_OPTIONS.map((opt) => (
+                          <option key={`from-${opt}`} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -364,16 +400,20 @@ export default function DevOpsPage() {
                         onChange={(e) => setToCloud(e.target.value)}
                         className="w-full h-10 px-3 bg-zinc-900 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none"
                       >
-                        {CLOUD_OPTIONS.filter(opt => opt !== fromCloud).map(opt => (
-                          <option key={`to-${opt}`} value={opt}>{opt}</option>
-                        ))}
+                        {CLOUD_OPTIONS.filter((opt) => opt !== fromCloud).map(
+                          (opt) => (
+                            <option key={`to-${opt}`} value={opt}>
+                              {opt}
+                            </option>
+                          ),
+                        )}
                       </select>
                     </div>
                   </div>
 
                   <div className="relative group">
                     <Textarea
-                      placeholder='# Paste your Terraform configurations here or upload a file...'
+                      placeholder="# Paste your Terraform configurations here or upload a file..."
                       className="relative min-h-[300px] font-mono text-sm bg-zinc-950/50 border-zinc-800 text-zinc-300 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/20 resize-none p-6 rounded"
                       value={terraformCode}
                       onChange={(e) => setTerraformCode(e.target.value)}
@@ -430,19 +470,20 @@ resource "google_compute_instance" "vm" {
 
                   <div className="flex justify-end">
                     <Button
+                      size="default"
                       onClick={handleMigrate}
                       disabled={isMigrating || !terraformCode.trim()}
-                      className="h-10 px-8 rounded bg-zinc-100 hover:bg-white text-zinc-900 font-semibold transition-all text-xs"
+                      className="gap-2 font-semibold text-xs"
                     >
                       {isMigrating ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <FiLoader className="mr-2 h-4 w-4 animate-spin" />
                           Translating Provider State...
                         </>
                       ) : (
                         <>
                           Migrate Infrastructure{" "}
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <FiArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
                     </Button>
@@ -457,8 +498,9 @@ resource "google_compute_instance" "vm" {
                   >
                     <div className="p-6 md:p-8 space-y-6">
                       <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-semibold tracking-tight">
-                          <CheckCircle2 className="w-5 h-5" /> Migration Plan Generated
+                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-semibold ">
+                          <FiCheckCircle className="w-5 h-5" /> Migration Plan
+                          Generated
                         </div>
                         <div className="flex items-center gap-2">
                           {extractMigratedCode(terraformOutput) && (
@@ -468,7 +510,7 @@ resource "google_compute_instance" "vm" {
                               size="sm"
                               className="text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-xs font-mono"
                             >
-                              <Download className="w-3 h-3 mr-2" />
+                              <FiDownload className="w-3.5 h-3.5 mr-2" />
                               Download migrated-main.tf
                             </Button>
                           )}
@@ -476,9 +518,9 @@ resource "google_compute_instance" "vm" {
                             onClick={handlePrintTerraform}
                             variant="outline"
                             size="sm"
-                            className="text-zinc-300 hover:text-white bg-zinc-800/50 hover:bg-zinc-700/50 border-zinc-700 text-xs font-mono"
+                            className="text-xs font-mono"
                           >
-                            <Printer className="w-3 h-3 mr-2" />
+                            <FiPrinter className="w-3.5 h-3.5 mr-2" />
                             Print Plan Report
                           </Button>
                         </div>
@@ -491,10 +533,10 @@ resource "google_compute_instance" "vm" {
                       {extractMigratedCode(terraformOutput) && (
                         <div className="border-t border-zinc-800/80 pt-6 space-y-4">
                           <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest font-bold flex items-center gap-2">
-                            <Github className="w-4 h-4 text-blue-500" />
+                            <FaGithub className="w-4 h-4 text-blue-500" />
                             Push Migrated HCL Directly to GitHub
                           </h4>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Dropdown of repositories */}
                             <div className="space-y-1.5">
@@ -503,13 +545,18 @@ resource "google_compute_instance" "vm" {
                               </label>
                               <select
                                 value={selectedRepoId}
-                                onChange={(e) => setSelectedRepoId(e.target.value)}
+                                onChange={(e) =>
+                                  setSelectedRepoId(e.target.value)
+                                }
                                 className="w-full h-10 px-3 bg-zinc-950 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none"
                               >
-                                <option value="">-- Select Repository --</option>
+                                <option value="">
+                                  -- Select Repository --
+                                </option>
                                 {profile?.repositories?.map((repo: any) => (
                                   <option key={repo.id} value={repo.id}>
-                                    {repo.full_name} ({repo.private ? "Private" : "Public"})
+                                    {repo.full_name} (
+                                    {repo.private ? "Private" : "Public"})
                                   </option>
                                 ))}
                               </select>
@@ -538,7 +585,9 @@ resource "google_compute_instance" "vm" {
                                 type="text"
                                 placeholder="main.tf"
                                 value={targetFilePath}
-                                onChange={(e) => setTargetFilePath(e.target.value)}
+                                onChange={(e) =>
+                                  setTargetFilePath(e.target.value)
+                                }
                                 className="w-full h-10 px-3 bg-zinc-950 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none"
                               />
                             </div>
@@ -559,18 +608,24 @@ resource "google_compute_instance" "vm" {
 
                           <div className="flex justify-end">
                             <Button
+                              size="sm"
                               onClick={handlePushToGithub}
-                              disabled={isPushing || !selectedRepoId || !pushBranch.trim() || !targetFilePath.trim()}
-                              className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs h-9 px-4 flex items-center gap-1.5 rounded-lg transition-all"
+                              disabled={
+                                isPushing ||
+                                !selectedRepoId ||
+                                !pushBranch.trim() ||
+                                !targetFilePath.trim()
+                              }
+                              className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs gap-1.5"
                             >
                               {isPushing ? (
                                 <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <FiLoader className="w-3.5 h-3.5 animate-spin" />
                                   Pushing...
                                 </>
                               ) : (
                                 <>
-                                  <Github className="w-3.5 h-3.5" />
+                                  <FaGithub className="w-3.5 h-3.5" />
                                   Push Code directly to GitHub
                                 </>
                               )}
@@ -580,7 +635,11 @@ resource "google_compute_instance" "vm" {
                       )}
 
                       <div style={{ display: "none" }}>
-                        <PrintableReport ref={terraformPrintRef} title={`Terraform Migration Plan (${fromCloud} to ${toCloud})`} content={terraformOutput} />
+                        <PrintableReport
+                          ref={terraformPrintRef}
+                          title={`Terraform Migration Plan (${fromCloud} to ${toCloud})`}
+                          content={terraformOutput}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -600,7 +659,7 @@ resource "google_compute_instance" "vm" {
                 <div className="p-6 md:p-8 space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold tracking-tight text-zinc-100">
+                      <h3 className="text-xl font-semibold  text-zinc-100">
                         Topology Synthesizer
                       </h3>
                       <p className="text-xs font-mono text-zinc-500 mt-1">
@@ -653,19 +712,20 @@ resource "google_compute_instance" "vm" {
 
                   <div className="flex justify-end">
                     <Button
+                      size="default"
                       onClick={handleAnalyze}
                       disabled={isAnalyzing || !archDescription.trim()}
-                      className="h-10 px-8 rounded bg-zinc-100 hover:bg-white text-zinc-900 font-semibold transition-all text-xs"
+                      className="gap-2 font-semibold text-xs"
                     >
                       {isAnalyzing ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <FiLoader className="mr-2 h-4 w-4 animate-spin" />
                           Synthesizing...
                         </>
                       ) : (
                         <>
                           Generate Blueprint{" "}
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <FiArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
                     </Button>
@@ -680,16 +740,16 @@ resource "google_compute_instance" "vm" {
                   >
                     <div className="p-6 md:p-8">
                       <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-semibold tracking-tight">
-                          <Sparkles className="w-5 h-5" /> Recommendation
+                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-semibold ">
+                          <FiCpu className="w-5 h-5" /> Recommendation
                         </div>
                         <Button
                           onClick={handlePrintArchitecture}
                           variant="outline"
                           size="sm"
-                          className="text-zinc-300 hover:text-white bg-zinc-800/50 hover:bg-zinc-700/50 border-zinc-700 text-xs font-mono"
+                          className="text-xs font-mono"
                         >
-                          <Printer className="w-3 h-3 mr-2" />
+                          <FiPrinter className="w-3.5 h-3.5 mr-2" />
                           Print / Export PDF
                         </Button>
                       </div>
@@ -697,7 +757,11 @@ resource "google_compute_instance" "vm" {
                         <MarkdownRenderer content={archOutput} />
                       </div>
                       <div style={{ display: "none" }}>
-                        <PrintableReport ref={archPrintRef} title="Architecture Design Report" content={archOutput} />
+                        <PrintableReport
+                          ref={archPrintRef}
+                          title="Architecture Design Report"
+                          content={archOutput}
+                        />
                       </div>
                     </div>
                   </motion.div>

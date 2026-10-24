@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { SiteHeader } from "@/components/site-header";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,7 +23,7 @@ import {
   GitCommit,
   Code2,
   X,
-  Plus
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,6 +60,14 @@ function formatBytes(bytes: number, decimals = 1) {
 export default function RepositoryDetailPage() {
   const router = useRouter();
   const { id } = useParams();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [repository, setRepository] = useState<any>(null);
@@ -80,18 +89,24 @@ export default function RepositoryDetailPage() {
     setLoadingFile(true);
     const toastId = toast.loading(`Opening folder...`);
     try {
-      const res = await fetch(`/api/repos/${id}?path=${encodeURIComponent(dirPath)}`);
+      const res = await fetch(
+        `/api/repos/${id}?path=${encodeURIComponent(dirPath)}`,
+      );
       const data = await res.json();
       if (data.success) {
         setFiles(data.files || []);
         setCurrentPath(dirPath);
         toast.success(`Opened folder`, { id: toastId });
       } else {
-        toast.error(data.error || "Failed to load directory contents.", { id: toastId });
+        toast.error(data.error || "Failed to load directory contents.", {
+          id: toastId,
+        });
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred while opening the folder.", { id: toastId });
+      toast.error("An error occurred while opening the folder.", {
+        id: toastId,
+      });
     } finally {
       setLoadingFile(false);
     }
@@ -109,11 +124,15 @@ export default function RepositoryDetailPage() {
           setCurrentPath("");
           toast.success("Loaded root directory", { id: toastId });
         } else {
-          toast.error(data.error || "Failed to load root contents.", { id: toastId });
+          toast.error(data.error || "Failed to load root contents.", {
+            id: toastId,
+          });
         }
       } catch (err) {
         console.error(err);
-        toast.error("An error occurred while loading root directory.", { id: toastId });
+        toast.error("An error occurred while loading root directory.", {
+          id: toastId,
+        });
       } finally {
         setLoadingFile(false);
       }
@@ -139,13 +158,17 @@ export default function RepositoryDetailPage() {
     setLoadingFile(true);
     const toastId = toast.loading(`Loading contents of ${file.name}...`);
     try {
-      const res = await fetch(`/api/repos/${id}/file?path=${encodeURIComponent(file.path)}`);
+      const res = await fetch(
+        `/api/repos/${id}/file?path=${encodeURIComponent(file.path)}`,
+      );
       const data = await res.json();
       if (data.success) {
         setSelectedFile(data);
         toast.success(`Loaded ${file.name}`, { id: toastId });
       } else {
-        toast.error(data.error || "Failed to load file contents.", { id: toastId });
+        toast.error(data.error || "Failed to load file contents.", {
+          id: toastId,
+        });
       }
     } catch (err) {
       console.error(err);
@@ -182,10 +205,10 @@ export default function RepositoryDetailPage() {
       const data = await res.json();
       if (data.success) {
         toast.success("File committed successfully!", { id: toastId });
-        
+
         // Refresh directory tree
         await navigateToPath(currentPath);
-        
+
         // Update local viewer
         setSelectedFile({
           name: selectedFile.name,
@@ -209,7 +232,9 @@ export default function RepositoryDetailPage() {
   // Delete File direct from GitHub
   const handleDeleteFile = async () => {
     if (!selectedFile) return;
-    const confirm = window.confirm(`Are you sure you want to delete ${selectedFile.name}? This action commits a file deletion directly to GitHub.`);
+    const confirm = window.confirm(
+      `Are you sure you want to delete ${selectedFile.name}? This action commits a file deletion directly to GitHub.`,
+    );
     if (!confirm) return;
 
     setSavingFile(true);
@@ -236,7 +261,9 @@ export default function RepositoryDetailPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred while deleting the file.", { id: toastId });
+      toast.error("An error occurred while deleting the file.", {
+        id: toastId,
+      });
     } finally {
       setSavingFile(false);
     }
@@ -244,7 +271,9 @@ export default function RepositoryDetailPage() {
 
   // Delete repository from GitHub & MongoDB
   const handleDeleteRepository = async () => {
-    const confirm = window.confirm(`WARNING: Are you sure you want to delete "${repository.name}"? This action permanently deletes it from both GitHub and ZeroOps.`);
+    const confirm = window.confirm(
+      `WARNING: Are you sure you want to delete "${repository.name}"? This action permanently deletes it from both GitHub and ZeroOps.`,
+    );
     if (!confirm) return;
 
     const toastId = toast.loading(`Deleting repository ${repository.name}...`);
@@ -257,17 +286,23 @@ export default function RepositoryDetailPage() {
         toast.success("Repository deleted successfully!", { id: toastId });
         router.push("/dashboard");
       } else {
-        toast.error(data.error || "Failed to delete repository.", { id: toastId });
+        toast.error(data.error || "Failed to delete repository.", {
+          id: toastId,
+        });
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred while deleting the repository.", { id: toastId });
+      toast.error("An error occurred while deleting the repository.", {
+        id: toastId,
+      });
     }
   };
 
   // Create new file template creator
   const handleCreateNewFile = () => {
-    const filename = window.prompt("Enter new file path (relative to current directory, e.g. config.json):");
+    const filename = window.prompt(
+      "Enter new file path (relative to current directory, e.g. config.json):",
+    );
     if (!filename) return;
 
     const fullPath = currentPath ? `${currentPath}/${filename}` : filename;
@@ -295,7 +330,7 @@ export default function RepositoryDetailPage() {
         setLoading(true);
         const res = await fetch(`/api/repos/${id}`);
         const data = await res.json();
-        
+
         if (data.success) {
           setRepository(data.repository);
           setReadmeHtml(data.readmeHtml);
@@ -335,13 +370,19 @@ export default function RepositoryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-blue-500/30 pb-20">
-      <SiteHeader />
+    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-blue-500/30 pb-20 relative overflow-hidden">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
 
       {/* Scoped CSS to replicate GitHub's README markdown rendering */}
       <style jsx global>{`
         .readme-html {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+          font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+            sans-serif;
           line-height: 1.6;
           color: #d4d4d8;
         }
@@ -357,12 +398,26 @@ export default function RepositoryDetailPage() {
           border-bottom: 1px solid rgba(39, 39, 42, 0.6);
           padding-bottom: 0.3em;
         }
-        .readme-html h1 { font-size: 1.75em; }
-        .readme-html h2 { font-size: 1.4em; }
-        .readme-html h3 { font-size: 1.2em; }
-        .readme-html p { margin-top: 0; margin-bottom: 16px; }
-        .readme-html a { color: #3b82f6; text-decoration: none; }
-        .readme-html a:hover { text-decoration: underline; }
+        .readme-html h1 {
+          font-size: 1.75em;
+        }
+        .readme-html h2 {
+          font-size: 1.4em;
+        }
+        .readme-html h3 {
+          font-size: 1.2em;
+        }
+        .readme-html p {
+          margin-top: 0;
+          margin-bottom: 16px;
+        }
+        .readme-html a {
+          color: #3b82f6;
+          text-decoration: none;
+        }
+        .readme-html a:hover {
+          text-decoration: underline;
+        }
         .readme-html code {
           padding: 0.2em 0.4em;
           margin: 0;
@@ -370,7 +425,14 @@ export default function RepositoryDetailPage() {
           background-color: rgba(39, 39, 42, 0.6);
           border: 1px solid rgba(63, 63, 70, 0.4);
           border-radius: 6px;
-          font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+          font-family:
+            ui-monospace,
+            SFMono-Regular,
+            SF Mono,
+            Menlo,
+            Consolas,
+            Liberation Mono,
+            monospace;
         }
         .readme-html pre {
           padding: 16px;
@@ -394,7 +456,9 @@ export default function RepositoryDetailPage() {
           margin-bottom: 16px;
           padding-left: 2em;
         }
-        .readme-html li { margin-top: 0.25em; }
+        .readme-html li {
+          margin-top: 0.25em;
+        }
         .readme-html blockquote {
           padding: 0 1em;
           color: #71717a;
@@ -428,7 +492,7 @@ export default function RepositoryDetailPage() {
         }
       `}</style>
 
-      <main className="relative z-10 max-w-[80vw] mx-auto pt-28 px-6 space-y-6">
+      <main className="relative z-10 max-w-[80vw] mx-auto pt-10 pb-32 px-6 space-y-6">
         {/* Navigation & Controls */}
         <div className="flex items-center justify-between">
           <Button
@@ -439,7 +503,7 @@ export default function RepositoryDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5 mr-2" />
             Back to Registry
           </Button>
-          
+
           <div className="flex items-center gap-3">
             {!loading && repository && (
               <Button
@@ -451,11 +515,7 @@ export default function RepositoryDetailPage() {
               </Button>
             )}
             {!loading && repository && (
-              <a
-                href={repository.html_url}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={repository.html_url} target="_blank" rel="noreferrer">
                 <Button
                   variant="outline"
                   className="border-blue-500/20 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-mono text-xs h-9 flex items-center gap-2"
@@ -485,15 +545,17 @@ export default function RepositoryDetailPage() {
                   <span className="text-zinc-500 font-mono text-sm">
                     {repository?.full_name?.split("/")[0]} /
                   </span>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">
+                  <h2 className="text-2xl font-bold text-white ">
                     {repository?.name}
                   </h2>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest border",
-                    repository?.private
-                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                      : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
-                  )}>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest border",
+                      repository?.private
+                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                        : "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+                    )}
+                  >
                     {repository?.private ? "Private" : "Public"}
                   </span>
                 </>
@@ -507,7 +569,11 @@ export default function RepositoryDetailPage() {
                   <div className="h-4 bg-zinc-800/60 rounded w-2/3 animate-pulse" />
                 </div>
               ) : (
-                repository?.description || <span className="italic text-zinc-600">No repository description loaded.</span>
+                repository?.description || (
+                  <span className="italic text-zinc-600">
+                    No repository description loaded.
+                  </span>
+                )
               )}
             </div>
 
@@ -519,8 +585,16 @@ export default function RepositoryDetailPage() {
                   <div className="flex items-center gap-2">
                     {repository?.language ? (
                       <>
-                        <span className={cn("w-2.5 h-2.5 rounded-full", LANGUAGE_COLOR_MAP[repository.language] || "bg-zinc-400")} />
-                        <span className="text-zinc-300">{repository.language}</span>
+                        <span
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-full",
+                            LANGUAGE_COLOR_MAP[repository.language] ||
+                              "bg-zinc-400",
+                          )}
+                        />
+                        <span className="text-zinc-300">
+                          {repository.language}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -532,18 +606,25 @@ export default function RepositoryDetailPage() {
 
                   <div className="flex items-center gap-1.5">
                     <Star className="w-4 h-4 text-yellow-600" />
-                    <span className="text-zinc-300">{repository?.stargazers_count} stars</span>
+                    <span className="text-zinc-300">
+                      {repository?.stargazers_count} stars
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-1.5">
                     <GitFork className="w-4 h-4 text-zinc-600" />
-                    <span className="text-zinc-300">{repository?.forks_count} forks</span>
+                    <span className="text-zinc-300">
+                      {repository?.forks_count} forks
+                    </span>
                   </div>
 
                   {repository?.created_at && (
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4 text-zinc-600" />
-                      <span>Created {new Date(repository.created_at).toLocaleDateString()}</span>
+                      <span>
+                        Created{" "}
+                        {new Date(repository.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
                 </>
@@ -558,7 +639,9 @@ export default function RepositoryDetailPage() {
             onClick={() => setActiveTab("code")}
             className={cn(
               "pb-2 px-1 text-sm font-semibold transition-all relative flex items-center gap-2",
-              activeTab === "code" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "code"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300",
             )}
           >
             <Code2 className="w-4 h-4" />
@@ -574,7 +657,9 @@ export default function RepositoryDetailPage() {
             onClick={() => setActiveTab("commits")}
             className={cn(
               "pb-2 px-1 text-sm font-semibold transition-all relative flex items-center gap-2",
-              activeTab === "commits" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "commits"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300",
             )}
           >
             <GitCommit className="w-4 h-4" />
@@ -616,7 +701,10 @@ export default function RepositoryDetailPage() {
                       currentPath.split("/").map((part, index, arr) => {
                         const subPath = arr.slice(0, index + 1).join("/");
                         return (
-                          <span key={subPath} className="flex items-center gap-1.5 text-zinc-600">
+                          <span
+                            key={subPath}
+                            className="flex items-center gap-1.5 text-zinc-600"
+                          >
                             <span>/</span>
                             <button
                               onClick={() => navigateToPath(subPath)}
@@ -628,7 +716,7 @@ export default function RepositoryDetailPage() {
                         );
                       })}
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     {!loading && (
                       <Button
@@ -652,7 +740,7 @@ export default function RepositoryDetailPage() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="divide-y divide-zinc-800/60 font-mono text-xs">
                   {loading ? (
                     <div className="p-8 flex items-center justify-center gap-3 text-zinc-500 italic">
@@ -838,7 +926,7 @@ export default function RepositoryDetailPage() {
                         <div className="h-4 bg-zinc-800/40 rounded w-full" />
                       </div>
                     ) : (
-                      <div 
+                      <div
                         className="readme-html"
                         dangerouslySetInnerHTML={{ __html: readmeHtml }}
                       />
@@ -873,7 +961,10 @@ export default function RepositoryDetailPage() {
                   {loading ? (
                     <div className="p-12 flex flex-col gap-6 animate-pulse">
                       {[1, 2, 3].map((n) => (
-                        <div key={n} className="flex items-center justify-between gap-4">
+                        <div
+                          key={n}
+                          className="flex items-center justify-between gap-4"
+                        >
                           <div className="space-y-2 w-2/3">
                             <div className="h-4 bg-zinc-800 rounded w-full" />
                             <div className="h-3 bg-zinc-800/60 rounded w-1/2" />
@@ -884,22 +975,37 @@ export default function RepositoryDetailPage() {
                     </div>
                   ) : commits.length > 0 ? (
                     commits.map((c) => (
-                      <div key={c.sha} className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-zinc-900/10 transition-colors">
+                      <div
+                        key={c.sha}
+                        className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-zinc-900/10 transition-colors"
+                      >
                         <div className="space-y-2">
-                          <h4 className="text-sm font-semibold text-zinc-200 line-clamp-1" title={c.message}>
+                          <h4
+                            className="text-sm font-semibold text-zinc-200 line-clamp-1"
+                            title={c.message}
+                          >
                             {c.message}
                           </h4>
                           <div className="flex items-center gap-2.5 text-[10px] text-zinc-500 font-mono">
                             <Avatar className="w-5 h-5 border border-zinc-800 bg-zinc-950 rounded-full shrink-0">
                               {c.author_avatar ? (
-                                <AvatarImage src={c.author_avatar} alt={c.author_login} className="rounded-full" />
+                                <AvatarImage
+                                  src={c.author_avatar}
+                                  alt={c.author_login}
+                                  className="rounded-full"
+                                />
                               ) : null}
                               <AvatarFallback className="text-[8px] bg-zinc-900 text-zinc-500">
                                 {c.author_login.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-zinc-300 font-semibold">{c.author_login}</span>
-                            <span>committed on {new Date(c.author_date).toLocaleDateString()}</span>
+                            <span className="text-zinc-300 font-semibold">
+                              {c.author_login}
+                            </span>
+                            <span>
+                              committed on{" "}
+                              {new Date(c.author_date).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
 
@@ -921,9 +1027,12 @@ export default function RepositoryDetailPage() {
                       <div className="inline-flex p-3 rounded-full bg-zinc-900/30 border border-zinc-800/60 text-zinc-600 mb-3">
                         <GitCommit className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-semibold text-zinc-400">No commits found</h4>
+                      <h4 className="text-sm font-semibold text-zinc-400">
+                        No commits found
+                      </h4>
                       <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
-                        Ensure there are commits pushed to this repository's main branch.
+                        Ensure there are commits pushed to this repository's
+                        main branch.
                       </p>
                     </div>
                   )}
