@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User } from "@/lib/models";
 import { invalidateUserCache } from "@/lib/repo-cache";
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -17,9 +17,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Repository name is required" }, { status: 400 });
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
@@ -60,27 +60,23 @@ export async function POST(request: Request) {
       name: data.name,
       full_name: data.full_name,
       html_url: data.html_url,
-      description: data.description,
-      private: data.private,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-      pushed_at: data.pushed_at,
-      stargazers_count: data.stargazers_count,
-      watchers_count: data.watchers_count,
+      description: data.description || "",
+      private: data.private ?? false,
+      created_at: data.created_at || "",
+      updated_at: data.updated_at || "",
+      pushed_at: data.pushed_at || "",
+      stargazers_count: data.stargazers_count || 0,
+      watchers_count: data.watchers_count || 0,
       language: data.language || "",
-      forks_count: data.forks_count,
+      forks_count: data.forks_count || 0,
     };
 
-    // Save to database
-    await updateDoc(userRef, {
-      repositories: arrayUnion(newRepo),
-      updatedAt: new Date().toISOString()
-    });
+    // Save to MongoDB
+    user.repositories.push(newRepo as any);
+    await user.save();
 
     // Invalidate local user caches
-    if (session.user.email) {
-      invalidateUserCache(session.user.email);
-    }
+    invalidateUserCache(session.user.email);
 
     return NextResponse.json({ success: true, repository: newRepo });
   } catch (error: any) {

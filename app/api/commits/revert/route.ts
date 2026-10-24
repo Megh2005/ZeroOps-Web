@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, deleteDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import mongoose from "mongoose";
+import { connectToDatabase } from "@/lib/mongodb";
+import { Commit } from "@/lib/models";
 import { invalidateUserCache } from "@/lib/repo-cache";
 
 export async function POST(request: Request) {
@@ -17,15 +18,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Commit ID is required" }, { status: 400 });
     }
 
-    // Retrieve commit record from Firestore
-    const commitRef = doc(db, "commits", commitId);
-    const commitSnap = await getDoc(commitRef);
-    if (!commitSnap.exists()) {
+    // Retrieve commit record from MongoDB
+    await connectToDatabase();
+
+    const queryConditions: any[] = [{ sha: commitId }];
+    if (mongoose.Types.ObjectId.isValid(commitId)) {
+      queryConditions.push({ _id: commitId });
+    }
+
+    const commitRecord = await Commit.findOne({ $or: queryConditions });
+    if (!commitRecord) {
       return NextResponse.json({ success: false, error: "Commit record not found" }, { status: 404 });
     }
 
-    const commitData = commitSnap.data();
-    if (commitData.userEmail !== session.user.email) {
+    if (commitRecord.userEmail.toLowerCase() !== session.user.email.toLowerCase()) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -35,11 +41,11 @@ export async function POST(request: Request) {
     }
 
     // Perform Revert Operation on GitHub
-    if (commitData.action === "create") {
+    if (commitRecord.action === "create") {
       // Reverting a file creation means deleting the file
       // 1. Fetch the file's current SHA from GitHub
       const fileRes = await fetch(
-        `https://api.github.com/repos/${commitData.repoName}/contents/${encodeURIComponent(commitData.path)}?ref=${commitData.branch}`,
+        `https://api.github.com/repos/${commitRecord.repoName}/contents/${encodeURIComponent(commitRecord.path)}?ref=${commitRecord.branch}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -52,7 +58,7 @@ export async function POST(request: Request) {
         const fileData = await fileRes.json();
         // 2. Call delete
         const delRes = await fetch(
-          `https://api.github.com/repos/${commitData.repoName}/contents/${encodeURIComponent(commitData.path)}`,
+          `https://api.github.com/repos/${commitRecord.repoName}/contents/${encodeURIComponent(commitRecord.path)}`,
           {
             method: "DELETE",
             headers: {
@@ -61,9 +67,9 @@ export async function POST(request: Request) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              message: `Revert commit ${commitData.sha}: Delete ${commitData.path}`,
+              message: `Revert commit ${commitRecord.sha}: Delete ${commitRecord.path}`,
               sha: fileData.sha,
-              branch: commitData.branch,
+              branch: commitRecord.branch,
             }),
           }
         );
@@ -76,11 +82,11 @@ export async function POST(request: Request) {
           );
         }
       }
-    } else if (commitData.action === "update") {
+    } else if (commitRecord.action === "update") {
       // Reverting an update means restoring the previous file contents
       // 1. Fetch file's current SHA from GitHub
       const fileRes = await fetch(
-        `https://api.github.com/repos/${commitData.repoName}/contents/${encodeURIComponent(commitData.path)}?ref=${commitData.branch}`,
+        `https://api.github.com/repos/${commitRecord.repoName}/contents/${encodeURIComponent(commitRecord.path)}?ref=${commitRecord.branch}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -97,11 +103,11 @@ export async function POST(request: Request) {
       }
 
       const fileData = await fileRes.json();
-      const base64Content = Buffer.from(commitData.previousContent || "").toString("base64");
+      const base64Content = Buffer.from(commitRecord.previousContent || "").toString("base64");
 
       // 2. Update contents with previousContent
       const putRes = await fetch(
-        `https://api.github.com/repos/${commitData.repoName}/contents/${encodeURIComponent(commitData.path)}`,
+        `https://api.github.com/repos/${commitRecord.repoName}/contents/${encodeURIComponent(commitRecord.path)}`,
         {
           method: "PUT",
           headers: {
@@ -110,10 +116,10 @@ export async function POST(request: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: `Revert commit ${commitData.sha}: Restore ${commitData.path}`,
+            message: `Revert commit ${commitRecord.sha}: Restore ${commitRecord.path}`,
             content: base64Content,
             sha: fileData.sha,
-            branch: commitData.branch,
+            branch: commitRecord.branch,
           }),
         }
       );
@@ -125,12 +131,12 @@ export async function POST(request: Request) {
           { status: putRes.status }
         );
       }
-    } else if (commitData.action === "delete") {
+    } else if (commitRecord.action === "delete") {
       // Reverting a deletion means recreating the file with previousContent
-      const base64Content = Buffer.from(commitData.previousContent || "").toString("base64");
+      const base64Content = Buffer.from(commitRecord.previousContent || "").toString("base64");
 
       const putRes = await fetch(
-        `https://api.github.com/repos/${commitData.repoName}/contents/${encodeURIComponent(commitData.path)}`,
+        `https://api.github.com/repos/${commitRecord.repoName}/contents/${encodeURIComponent(commitRecord.path)}`,
         {
           method: "PUT",
           headers: {
@@ -139,9 +145,9 @@ export async function POST(request: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: `Revert commit ${commitData.sha}: Recreate ${commitData.path}`,
+            message: `Revert commit ${commitRecord.sha}: Recreate ${commitRecord.path}`,
             content: base64Content,
-            branch: commitData.branch,
+            branch: commitRecord.branch,
           }),
         }
       );
@@ -155,8 +161,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Delete commit log record after successful revert
-    await deleteDoc(commitRef);
+    // Delete commit log record from MongoDB after successful revert
+    await Commit.deleteOne({ _id: commitRecord._id });
     invalidateUserCache(session.user.email);
 
     return NextResponse.json({ success: true });

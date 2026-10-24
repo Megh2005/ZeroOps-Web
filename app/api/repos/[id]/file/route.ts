@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User, Commit } from "@/lib/models";
 
 export async function GET(
   request: Request,
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -22,14 +22,13 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Path parameter is required" }, { status: 400 });
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === id);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === id.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found in your account" }, { status: 404 });
     }
@@ -82,7 +81,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -93,14 +92,13 @@ export async function PUT(
       return NextResponse.json({ success: false, error: "Missing required parameters: path and content" }, { status: 400 });
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === id);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === id.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found" }, { status: 404 });
     }
@@ -159,12 +157,11 @@ export async function PUT(
 
     const data = await res.json();
 
-    // Log commit to Firestore
+    // Log commit to MongoDB
     try {
-      const commitRef = doc(db, "commits", data.commit.sha);
-      await setDoc(commitRef, {
+      await Commit.create({
         sha: data.commit.sha,
-        userEmail: session.user.email!,
+        userEmail: session.user.email.toLowerCase(),
         repoId: id,
         repoName: repo.full_name,
         branch: "main",
@@ -175,10 +172,10 @@ export async function PUT(
         previousContent,
         previousSha: sha || null,
         shaAfter: data.content.sha,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
       });
     } catch (dbErr) {
-      console.error("Failed to save commit log to Firestore:", dbErr);
+      console.error("Failed to save commit log to MongoDB:", dbErr);
     }
 
     return NextResponse.json({
@@ -198,7 +195,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -209,14 +206,13 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Missing required parameters: path and sha" }, { status: 400 });
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === id);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === id.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found" }, { status: 404 });
     }
@@ -265,12 +261,11 @@ export async function DELETE(
 
     const deleteData = await res.json();
 
-    // Log delete commit to Firestore
+    // Log delete commit to MongoDB
     try {
-      const commitRef = doc(db, "commits", deleteData.commit.sha);
-      await setDoc(commitRef, {
+      await Commit.create({
         sha: deleteData.commit.sha,
-        userEmail: session.user.email!,
+        userEmail: session.user.email.toLowerCase(),
         repoId: id,
         repoName: repo.full_name,
         branch: "main",
@@ -281,10 +276,10 @@ export async function DELETE(
         previousContent,
         previousSha: sha,
         shaAfter: null,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
       });
     } catch (dbErr) {
-      console.error("Failed to save delete commit log to Firestore:", dbErr);
+      console.error("Failed to save delete commit log to MongoDB:", dbErr);
     }
 
     return NextResponse.json({ success: true });

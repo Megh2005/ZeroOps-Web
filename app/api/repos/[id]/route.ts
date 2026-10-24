@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User } from "@/lib/models";
 import { repoCache, CACHE_TTL, invalidateUserCache } from "@/lib/repo-cache";
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -22,18 +22,17 @@ export async function GET(
     // Generate path-specific cache keys
     const cacheKey = `${session.user.email}-${id}-path-${path || "root"}`;
     const cached = repoCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return NextResponse.json(cached.data);
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === id);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === id.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found in your account" }, { status: 404 });
     }
@@ -197,19 +196,18 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === id);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === id.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found" }, { status: 404 });
     }
@@ -236,17 +234,12 @@ export async function DELETE(
       }
     }
 
-    // Delete repository from user profile
-    const updatedRepos = (userData.repositories || []).filter((r: any) => r.id !== repo.id);
-    await updateDoc(userRef, {
-      repositories: updatedRepos,
-      updatedAt: new Date().toISOString()
-    });
+    // Delete repository from user document in MongoDB
+    user.repositories = (user.repositories || []).filter((r: any) => r.id.toString() !== id.toString());
+    await user.save();
 
     // Invalidate caches
-    if (session.user.email) {
-      invalidateUserCache(session.user.email);
-    }
+    invalidateUserCache(session.user.email);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

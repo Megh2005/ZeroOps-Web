@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User, Commit } from "@/lib/models";
 import { invalidateUserCache } from "@/lib/repo-cache";
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -17,14 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Missing required parameters: repoId, branch, path, content" }, { status: 400 });
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const userData = userSnap.data();
-    const repo = (userData.repositories || []).find((r: any) => r.id.toString() === repoId);
+    const repo = (user.repositories || []).find((r: any) => r.id.toString() === repoId.toString());
     if (!repo) {
       return NextResponse.json({ success: false, error: "Repository not found" }, { status: 404 });
     }
@@ -71,7 +70,6 @@ export async function POST(request: Request) {
         baseSha = baseData.object.sha;
       } else {
         // If repo is completely empty, it might not have ref/heads yet. In that case, we can only write to main directly.
-        // We will skip branch creation and let GitHub API handle auto init if writing to main.
         if (branch !== "main" && branch !== "master") {
           return NextResponse.json({ success: false, error: "Cannot create new branch because repository has no default commits (is empty). Please push to 'main' first." }, { status: 400 });
         }
@@ -140,16 +138,13 @@ export async function POST(request: Request) {
     const commitData = await commitRes.json();
 
     // Invalidate local user caches so file tree is refreshed
-    if (session.user.email) {
-      invalidateUserCache(session.user.email);
-    }
+    invalidateUserCache(session.user.email);
 
-    // Save commit info to Firestore
+    // Save commit info to MongoDB
     try {
-      const commitRef = doc(db, "commits", commitData.commit.sha);
-      await setDoc(commitRef, {
+      await Commit.create({
         sha: commitData.commit.sha,
-        userEmail: session.user.email!,
+        userEmail: session.user.email.toLowerCase(),
         repoId: repoId.toString(),
         repoName: repo.full_name,
         branch,
@@ -160,10 +155,10 @@ export async function POST(request: Request) {
         previousContent,
         previousSha: existingSha || null,
         shaAfter: commitData.content.sha,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
       });
     } catch (dbErr) {
-      console.error("Failed to save commit log to Firestore:", dbErr);
+      console.error("Failed to save commit log to MongoDB:", dbErr);
     }
 
     return NextResponse.json({
