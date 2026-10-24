@@ -90,9 +90,16 @@ button{
   cursor: pointer;
 }
 
+html,
+body,
+* {
+  font-family: var(--font-roboto-slab), serif;
+}
+
 @theme inline {
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-outfit);
+  --font-sans: var(--font-roboto-slab), serif;
+  --font-mono: var(--font-roboto-slab), serif;
+  --font-serif: var(--font-roboto-slab), serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

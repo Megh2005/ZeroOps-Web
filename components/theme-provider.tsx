@@ -3,11 +3,17 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme, type ThemeProviderProps } from "next-themes"
 import { motion } from "framer-motion"
-import { Moon, Sun } from "lucide-react"
+import { FiMoon, FiSun } from "react-icons/fi"
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="dark" {...props}>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+      {...props}
+    >
       {children}
     </NextThemesProvider>
   )
@@ -39,9 +45,9 @@ export function ThemeToggle() {
     >
       <motion.div initial={false} animate={{ rotate: theme === "dark" ? 0 : 180 }} transition={{ duration: 0.3 }}>
         {theme === "dark" ? (
-          <Moon className="w-5 h-5 text-secondary-foreground" />
+          <FiMoon className="w-5 h-5 text-secondary-foreground" />
         ) : (
-          <Sun className="w-5 h-5 text-secondary-foreground" />
+          <FiSun className="w-5 h-5 text-secondary-foreground" />
         )}
       </motion.div>
     </motion.button>
