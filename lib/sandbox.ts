@@ -31,16 +31,14 @@ export interface ValidationResult {
   };
 }
 
-/**
- * Creates a tar archive in memory containing a single main.tf file.
- */
+
 function createTarArchive(fileName: string, fileContent: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const pack = tar.pack();
     const chunks: Buffer[] = [];
-    
-    pack.on("data", (chunk) => chunks.push(chunk));
-    pack.on("end", () => resolve(Buffer.concat(chunks)));
+    pack.on("data", (chunk: unknown) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+    });
     pack.on("error", (err) => reject(err));
     
     pack.entry({ name: fileName }, fileContent, (err) => {
