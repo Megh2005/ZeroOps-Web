@@ -90,10 +90,7 @@ ZeroOps/
 │   ├── builder/page.tsx                  # Drag-and-drop Visual Infrastructure Builder
 │   ├── code-to-builder/page.tsx          # Reverse engineer Terraform HCL into Visual Canvas
 │   ├── commits/page.tsx                  # Commit timeline, code diffs, and instant rollback
-│   ├── dashboard/page.tsx                # Central Hub: Repositories, metrics, activity, quick-launch
 │   ├── devops/page.tsx                   # Multi-Cloud Terraform Migrator & GCP Architecture Suggester
-│   ├── docs/page.tsx                     # ZeroOps platform documentation & guides
-│   ├── onboarding/page.tsx               # 3-step User Onboarding: Use case, Team size, Domain
 │   ├── profile/page.tsx                  # User Profile & GCP Account Link Management
 │   ├── repos/[id]/page.tsx               # Repo Explorer: File tree, markdown viewer, file editor
 │   ├── terraform-view/page.tsx           # Terraform Studio: Inspect, Sandbox Test, AI Debug, Live Deploy
@@ -215,13 +212,11 @@ Powered by Google Gemini (`gemini-3.1-flash-lite`). Functions:
 ## 5. Authentication, Guards & Profile Lifecycle
 
 1. **Unauthenticated User**:
-   - Allowed routes: `/`, `/auth`, `/docs`.
+   - Allowed routes: `/`, `/auth`.
    - Accessing any protected route redirects immediately to `/auth`.
-2. **Authenticated without Profile**:
-   - If user is logged in via GitHub but `profile.useCase` is missing, `AuthGuard` forcibly redirects to `/onboarding`.
-3. **Completed Onboarding**:
-   - `onboarding/page.tsx` collects `useCase`, `teamSize`, and `fieldOfWork`, sending them to `/api/user/profile`.
-   - Once completed, accessing `/auth` or `/onboarding` redirects directly to `/dashboard`.
+2. **Authenticated User**:
+   - Accessing `/auth` redirects directly to `/profile`.
+   - Users land directly in their `/profile` page upon sign in, where repository telemetry and sync are managed.
 4. **Session Normalization**:
    - `AuthProvider` normalizes GitHub session properties to match standard User fields (`uid`, `displayName`, `photoURL`, `username`).
 
