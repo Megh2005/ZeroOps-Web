@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import {
   Book,
   Box,
@@ -43,7 +45,6 @@ import {
   ListTodo,
 } from "lucide-react";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -185,18 +186,31 @@ const ComponentCard = ({
 };
 
 export default function DocsPage() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-blue-500/30 ">
+    <div className="min-h-screen bg-background text-white selection:bg-blue-500/30 relative overflow-hidden">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
+
       {/* Background Effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
         <div className="absolute top-[-20%] left-[-10%] h-[800px] w-[800px] rounded-full bg-purple-900/10 blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] h-[800px] w-[800px] rounded-full bg-blue-900/10 blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center mask-[linear-gradient(180deg,white,rgba(255,255,255,0))]" />
       </div>
 
-      <SiteHeader />
-
-      <main className="relative z-10 pt-32 pb-20">
+      <main className="relative z-10 pt-10 pb-32">
         {/* Hero Section */}
         <section className="max-w-[80vw] mx-auto px-6 text-center mb-32">
           <motion.div
