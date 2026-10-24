@@ -4,17 +4,17 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Layers, 
-  Send, 
-  RefreshCw, 
-  ArrowLeft, 
-  Check, 
-  Loader2, 
-  Trash2, 
-  Coins, 
-  Code,
-  Cpu
-} from "lucide-react"
+  FiLayers, 
+  FiSend, 
+  FiRefreshCw, 
+  FiArrowLeft, 
+  FiCheck, 
+  FiLoader, 
+  FiTrash2, 
+  FiDollarSign, 
+  FiCode,
+  FiCpu
+} from "react-icons/fi"
 import { useTheme } from "next-themes"
 import { Floating3DParticles } from "@/components/ui/floating-3d-particles"
 import { toast } from "sonner"
@@ -286,11 +286,11 @@ function AiBuilderContent() {
               onClick={() => router.push("/profile")} 
               className="p-1.5 hover:bg-zinc-850 rounded-lg text-zinc-400 hover:text-zinc-150 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <FiArrowLeft className="w-4 h-4" />
             </button>
             <div>
               <h2 className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
-                <Cpu className="w-4 h-4 text-purple-400" /> AI Architect
+                <FiCpu className="w-4 h-4 text-purple-400" /> AI Architect
               </h2>
               <span className="text-[10px] text-zinc-500 font-mono">PROMPT-TO-BUILDER</span>
             </div>
@@ -298,14 +298,14 @@ function AiBuilderContent() {
           
           <div className="flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-semibold text-zinc-400">
-              <Coins className="w-3 h-3 text-amber-500" /> ${totalCost}/mo
+              <FiDollarSign className="w-3 h-3 text-amber-500" /> ${totalCost}/mo
             </span>
             <button
               onClick={handleClear}
               title="Reset Workspace"
               className="p-1.5 hover:bg-red-950/20 hover:text-red-400 rounded-lg text-zinc-500 transition-colors border border-transparent hover:border-red-900/30"
             >
-              <Trash2 className="w-4 h-4" />
+              <FiTrash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -333,7 +333,7 @@ function AiBuilderContent() {
           ))}
           {isLoading && (
             <div className="flex items-center gap-2 max-w-[85%] mr-auto text-zinc-500 font-mono text-[10px] bg-zinc-900/40 p-3 rounded-2xl border border-zinc-800/40">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+              <FiLoader className="w-3.5 h-3.5 animate-spin text-purple-400" />
               Generating topologies...
             </div>
           )}
@@ -382,7 +382,7 @@ function AiBuilderContent() {
               disabled={isLoading || !inputValue.trim()}
               className="w-10 h-10 rounded-xl shrink-0"
             >
-              <Send className="w-4 h-4" />
+              <FiSend className="w-4 h-4" />
             </Button>
           </div>
 
@@ -395,7 +395,7 @@ function AiBuilderContent() {
                 onClick={handleOpenInBuilder}
                 className="flex-1 font-mono text-xs gap-1.5"
               >
-                <Layers className="w-3.5 h-3.5 text-blue-400" /> Open in Workspace
+                <FiLayers className="w-3.5 h-3.5 text-blue-400" /> Open in Workspace
               </Button>
               <Button
                 variant="default"
@@ -403,7 +403,7 @@ function AiBuilderContent() {
                 onClick={handleViewTerraform}
                 className="flex-1 font-mono text-xs gap-1.5"
               >
-                <Code className="w-3.5 h-3.5" /> View Terraform HCL
+                <FiCode className="w-3.5 h-3.5" /> View Terraform HCL
               </Button>
             </div>
           )}
@@ -415,7 +415,7 @@ function AiBuilderContent() {
         
         {/* Canvas Toolbar Badge */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-zinc-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800/80 shadow-lg">
-          <Layers className="w-3.5 h-3.5 text-blue-400" />
+          <FiLayers className="w-3.5 h-3.5 text-blue-400" />
           <span className="text-[10px] font-mono font-bold text-zinc-400">Interactive Preview Workspace</span>
         </div>
 
@@ -434,10 +434,11 @@ function AiBuilderContent() {
           />
         </div>
 
-        {/* Component Configuration Side Drawer */}
+        {/* Component Configuration Popover */}
         <AnimatePresence>
           {selectedComponent && (
             <ConfigPanel
+              floating
               component={selectedComponent}
               onUpdate={(updates) => handleUpdateComponent(selectedComponent.id, updates)}
               onClose={() => handleSelectComponent(null)}

@@ -2,14 +2,38 @@
 
 import type React from "react"
 import { motion } from "framer-motion"
-import * as Icons from "lucide-react"
-import { X, Trash2, Save } from "lucide-react"
+import { 
+  FiServer, 
+  FiZap, 
+  FiCpu, 
+  FiDatabase, 
+  FiLayers, 
+  FiGlobe, 
+  FiShield, 
+  FiLock, 
+  FiKey, 
+  FiActivity, 
+  FiRadio, 
+  FiFileText, 
+  FiCode, 
+  FiAnchor, 
+  FiTerminal, 
+  FiShare2, 
+  FiX, 
+  FiTrash2, 
+  FiSave,
+  FiBox
+} from "react-icons/fi"
+import { LuBoxes, LuHardDrive, LuNetwork, LuTrash2 } from "react-icons/lu"
+import { HiOutlineCube } from "react-icons/hi2"
 import type { CanvasComponent } from "@/types/architecture"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import {
   gcpRegions,
   machineTypes,
@@ -19,12 +43,39 @@ import {
   minInstanceOptions,
   maxInstanceOptions,
 } from "@/lib/devops-components"
+import { Save, X } from "lucide-react"
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Server: FiServer,
+  Zap: FiZap,
+  Container: LuBoxes,
+  Cpu: FiCpu,
+  Box: HiOutlineCube,
+  HardDrive: LuHardDrive,
+  Database: FiDatabase,
+  Layers: FiLayers,
+  Network: LuNetwork,
+  Globe: FiGlobe,
+  Shield: FiShield,
+  Lock: FiLock,
+  Key: FiKey,
+  Activity: FiActivity,
+  Radio: FiRadio,
+  RadioReceiver: FiRadio,
+  FileText: FiFileText,
+  Code: FiCode,
+  Anchor: FiAnchor,
+  Terminal: FiTerminal,
+  Share2: FiShare2,
+}
 
 interface ConfigPanelProps {
   component: CanvasComponent
   onUpdate: (updates: Partial<CanvasComponent>) => void
   onClose: () => void
   onDelete: () => void
+  className?: string
+  floating?: boolean
 }
 
 const getConfigFields = (
@@ -393,12 +444,18 @@ const getConfigFields = (
   }
 }
 
-export function ConfigPanel({ component, onUpdate, onClose, onDelete }: ConfigPanelProps) {
+export function ConfigPanel({
+  component,
+  onUpdate,
+  onClose,
+  onDelete,
+  className,
+  floating = false,
+}: ConfigPanelProps) {
   const [name, setName] = useState(component.name)
   const [config, setConfig] = useState(component.config)
 
-  const IconComponent =
-    (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[component.icon] || Icons.Box
+  const IconComponent = ICON_MAP[component.icon] || FiBox
   const fields = getConfigFields(component.type)
 
   useEffect(() => {
@@ -417,6 +474,8 @@ export function ConfigPanel({ component, onUpdate, onClose, onDelete }: ConfigPa
       if (sql) cost = sql.cost
     }
     onUpdate({ name, config, cost })
+    toast.success("Component configuration saved!")
+    onClose()
   }
 
   const handleConfigChange = (key: string, value: string) => {
@@ -425,98 +484,117 @@ export function ConfigPanel({ component, onUpdate, onClose, onDelete }: ConfigPa
 
   return (
     <motion.div
-      initial={{ x: 320, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 320, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="w-80 bg-card border-l border-border flex flex-col shrink-0 overflow-hidden shadow-xl"
+      initial={floating ? { opacity: 0, scale: 0.95, y: -10 } : { x: 320, opacity: 0 }}
+      animate={floating ? { opacity: 1, scale: 1, y: 0 } : { x: 0, opacity: 1 }}
+      exit={floating ? { opacity: 0, scale: 0.95, y: -10 } : { x: 320, opacity: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: floating ? 380 : 300,
+        damping: floating ? 28 : 30,
+      }}
+      className={cn(
+        floating
+          ? "absolute top-4 right-4 z-50 w-84 md:w-96 max-h-[calc(100%-2rem)] bg-zinc-950/95 backdrop-blur-2xl border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 text-zinc-100"
+          : "w-80 bg-zinc-950/95 border-l border-zinc-800 flex flex-col shrink-0 overflow-hidden shadow-xl text-zinc-100",
+        className
+      )}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <IconComponent className="w-5 h-5 text-primary" />
+      <fieldset className="flex flex-col h-full m-0 p-0 border-0 overflow-hidden">
+        {/* Header */}
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/60">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <IconComponent className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <legend className="font-bold text-zinc-100 text-sm leading-tight block">
+                Configure {component.name}
+              </legend>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                {component.category}
+              </span>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-card-foreground">Configure</h3>
-            <p className="text-xs text-muted-foreground capitalize">{component.category}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
+            title="Close"
+          >
+            <FiX className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+          {/* Component Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="component-name" className="text-xs font-semibold text-zinc-300">
+              Component Label
+            </Label>
+            <Input
+              id="component-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="bg-zinc-900 border-zinc-800 text-zinc-100 text-xs h-9 focus:border-blue-500"
+            />
           </div>
-        </div>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Name field */}
-        <div className="space-y-2">
-          <Label htmlFor="component-name">Component Name</Label>
-          <Input id="component-name" value={name} onChange={(e) => setName(e.target.value)} className="bg-background" />
-        </div>
-
-        {/* Cost display */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-3 rounded-lg bg-accent/50 border border-border"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Estimated Cost</span>
-            <span className="text-lg font-semibold text-primary">
+          {/* Cost display */}
+          <div className="p-3 rounded-xl bg-zinc-900/70 border border-zinc-800/80 flex items-center justify-between">
+            <span className="text-xs text-zinc-400 font-medium">Estimated Monthly Cost</span>
+            <span className="text-sm font-bold text-emerald-400 font-mono">
               {component.cost > 0 ? `$${component.cost.toFixed(2)}/mo` : "Free tier"}
             </span>
           </div>
-        </motion.div>
 
-        {/* Dynamic config fields - ALL DROPDOWNS */}
-        <div className="space-y-4">
-          {fields.map((field, index) => {
-            const value = String(config[field.key] || "")
+          {/* Dynamic config fields */}
+          <div className="space-y-3.5 pt-1">
+            {fields.map((field) => {
+              const value = String(config[field.key] || "")
 
-            return (
-              <motion.div
-                key={field.key}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
-                className="space-y-2"
-              >
-                <Label>{field.label}</Label>
-                <Select value={value} onValueChange={(val) => handleConfigChange(field.key, val)}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {field.options?.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </motion.div>
-            )
-          })}
+              return (
+                <div key={field.key} className="space-y-1.5">
+                  <Label className="text-xs font-medium text-zinc-300">{field.label}</Label>
+                  <Select value={value} onValueChange={(val) => handleConfigChange(field.key, val)}>
+                    <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-200 text-xs h-9 w-full">
+                      <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-200 z-100">
+                      {field.options?.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs hover:bg-zinc-800 focus:bg-zinc-800">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border space-y-2">
-        <Button onClick={handleSave} className="w-full gap-2">
-          <Save className="w-4 h-4" />
-          Save Changes
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onDelete}
-          className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
-        >
-          <Trash2 className="w-4 h-4" />
-          Delete Component
-        </Button>
-      </div>
+        {/* Footer */}
+        <div className="p-4 border-t border-zinc-800/80 bg-zinc-900/50 space-y-2">
+          <Button
+            type="button"
+            onClick={handleSave}
+            className="w-full gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs h-9"
+          >
+            <FiSave className="w-4 h-4" />
+            Save Changes
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onDelete}
+            className="w-full gap-2 text-red-400 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 bg-transparent text-xs h-9"
+          >
+            <FiTrash2 className="w-4 h-4" />
+            Delete Component
+          </Button>
+        </div>
+      </fieldset>
     </motion.div>
   )
 }
