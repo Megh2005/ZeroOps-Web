@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -33,9 +35,8 @@ import {
   GitFork,
   Tag,
   FolderGit2,
-  Sparkles,
   Plus,
-  X
+  X,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -47,7 +48,6 @@ import {
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SiteHeader } from "@/components/site-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -109,13 +109,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   "web-dev": [
     {
       title: "ZeroOps React Next.js Pipeline Scaffolding",
-      description: "Automated Docker containerization logic configuration optimized for Next.js App Router.",
+      description:
+        "Automated Docker containerization logic configuration optimized for Next.js App Router.",
       command: "npx zeroops init --template=nextjs",
       docsUrl: "/docs/nextjs",
     },
     {
       title: "ZeroOps Node.js Express Backend Service",
-      description: "Docker Compose manifest with multi-stage builds, reverse proxies, and database services.",
+      description:
+        "Docker Compose manifest with multi-stage builds, reverse proxies, and database services.",
       command: "npx zeroops init --template=express-mongo",
       docsUrl: "/docs/express",
     },
@@ -123,13 +125,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   "mobile-dev": [
     {
       title: "ZeroOps React Native Android/iOS Deployment",
-      description: "Cloud-native EAS configuration templates for automated builds and push notifications.",
+      description:
+        "Cloud-native EAS configuration templates for automated builds and push notifications.",
       command: "npx zeroops init --template=react-native",
       docsUrl: "/docs/react-native",
     },
     {
       title: "ZeroOps Flutter Mobile App Engine",
-      description: "CI/CD configurations linking Flutter pipelines directly to AWS AppRunner instances.",
+      description:
+        "CI/CD configurations linking Flutter pipelines directly to AWS AppRunner instances.",
       command: "npx zeroops init --template=flutter",
       docsUrl: "/docs/flutter",
     },
@@ -137,13 +141,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   "data-science": [
     {
       title: "ZeroOps Python PyTorch GPU Cluster",
-      description: "Docker containers prepared for NVIDIA GPU allocation, Jupyter Notebook server, and data mounts.",
+      description:
+        "Docker containers prepared for NVIDIA GPU allocation, Jupyter Notebook server, and data mounts.",
       command: "npx zeroops init --template=pytorch-gpu",
       docsUrl: "/docs/pytorch",
     },
     {
       title: "ZeroOps PostgreSQL & pgvector Database",
-      description: "Production Vector database environment prepared for LLM embeddings storage and query validation.",
+      description:
+        "Production Vector database environment prepared for LLM embeddings storage and query validation.",
       command: "npx zeroops init --template=postgres-vector",
       docsUrl: "/docs/postgres-vector",
     },
@@ -151,13 +157,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   design: [
     {
       title: "ZeroOps Tailwind UI Design Package",
-      description: "Pre-configured templates containing storybook instances, design system tokens, and canvas preview adapters.",
+      description:
+        "Pre-configured templates containing storybook instances, design system tokens, and canvas preview adapters.",
       command: "npx zeroops init --template=design-system",
       docsUrl: "/docs/design-system",
     },
     {
       title: "ZeroOps Static Preview CDN Deployer",
-      description: "Automated actions routing local design directories directly to cloud edge workers for reviews.",
+      description:
+        "Automated actions routing local design directories directly to cloud edge workers for reviews.",
       command: "npx zeroops init --template=static-edge",
       docsUrl: "/docs/static-edge",
     },
@@ -165,13 +173,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   marketing: [
     {
       title: "ZeroOps Google Tag Manager & GA4 Container",
-      description: "Pre-assembled configuration parameters mapping analytical events to secure databases.",
+      description:
+        "Pre-assembled configuration parameters mapping analytical events to secure databases.",
       command: "npx zeroops init --template=analytics-core",
       docsUrl: "/docs/analytics",
     },
     {
       title: "ZeroOps Landing Page SEO Scaffold",
-      description: "Static landing page optimized for high-performance PageSpeed indicators and CDN caching.",
+      description:
+        "Static landing page optimized for high-performance PageSpeed indicators and CDN caching.",
       command: "npx zeroops init --template=seo-landing",
       docsUrl: "/docs/seo-landing",
     },
@@ -179,13 +189,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   student: [
     {
       title: "ZeroOps Basic Web Sandbox Stack",
-      description: "Simple boilerplate hosting HTML/CSS/JS nodes inside safe playground containers.",
+      description:
+        "Simple boilerplate hosting HTML/CSS/JS nodes inside safe playground containers.",
       command: "npx zeroops init --template=student-sandbox",
       docsUrl: "/docs/sandbox",
     },
     {
       title: "ZeroOps Basic Python API Server",
-      description: "Muted backend service template deploying simple JSON responses for classroom verification.",
+      description:
+        "Muted backend service template deploying simple JSON responses for classroom verification.",
       command: "npx zeroops init --template=student-python",
       docsUrl: "/docs/student-python",
     },
@@ -193,13 +205,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
   other: [
     {
       title: "ZeroOps General CI/CD Scaffolding",
-      description: "Universal GitHub Actions pipelines designed to build and deploy Docker workspaces.",
+      description:
+        "Universal GitHub Actions pipelines designed to build and deploy Docker workspaces.",
       command: "cat zeroops.yml",
       docsUrl: "/docs/devops-ci",
     },
     {
       title: "Docker Compose Workspace Package",
-      description: "Container orchestration linking reverse proxies, relational databases, and caching layers.",
+      description:
+        "Container orchestration linking reverse proxies, relational databases, and caching layers.",
       command: "docker-compose -f workspace.yml up -d",
       docsUrl: "/docs/docker",
     },
@@ -208,7 +222,15 @@ const STARTER_BLUEPRINTS: Record<string, BlueprintItem[]> = {
 
 export default function DashboardPage() {
   const { user, profile: dbProfile, loading } = useAuth();
-  
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
+
   const profile = dbProfile || {
     displayName: user?.displayName || "DevOps Developer",
     email: user?.email || "",
@@ -225,7 +247,9 @@ export default function DashboardPage() {
   const [cpuValue, setCpuValue] = useState(2.4);
   const [ramValue, setRamValue] = useState(8.2);
   const [networkLatency, setNetworkLatency] = useState(14);
-  const [activeNotification, setActiveNotification] = useState<string | null>(null);
+  const [activeNotification, setActiveNotification] = useState<string | null>(
+    null,
+  );
 
   // Tab State
   const [activeTab, setActiveTab] = useState("overview"); // "overview" or "repositories"
@@ -266,13 +290,17 @@ export default function DashboardPage() {
         setNewRepoName("");
         setNewRepoDesc("");
         setNewRepoPrivate(false);
-        setRepositories(prev => [data.repository, ...prev]);
+        setRepositories((prev) => [data.repository, ...prev]);
       } else {
-        toast.error(data.error || "Failed to create repository.", { id: toastId });
+        toast.error(data.error || "Failed to create repository.", {
+          id: toastId,
+        });
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred during repository creation.", { id: toastId });
+      toast.error("An error occurred during repository creation.", {
+        id: toastId,
+      });
     } finally {
       setCreatingRepo(false);
     }
@@ -285,7 +313,9 @@ export default function DashboardPage() {
   }, [dbProfile]);
 
   // Live Breathing Resource Metrics & History Graph queue
-  const [systemHistory, setSystemHistory] = useState<Array<{ time: string; cpu: number; ram: number }>>([
+  const [systemHistory, setSystemHistory] = useState<
+    Array<{ time: string; cpu: number; ram: number }>
+  >([
     { time: "10s ago", cpu: 2.1, ram: 7.8 },
     { time: "9s ago", cpu: 2.4, ram: 7.9 },
     { time: "8s ago", cpu: 3.2, ram: 8.0 },
@@ -307,7 +337,10 @@ export default function DashboardPage() {
       setNetworkLatency(Math.floor(12 + Math.random() * 5));
 
       setSystemHistory((prev) => {
-        const updated = [...prev.slice(1), { time: "Now", cpu: nextCpu, ram: nextRam }];
+        const updated = [
+          ...prev.slice(1),
+          { time: "Now", cpu: nextCpu, ram: nextRam },
+        ];
         // Re-label history for visual consistency
         return updated.map((item, idx) => {
           if (idx === updated.length - 1) return { ...item, time: "Now" };
@@ -320,7 +353,9 @@ export default function DashboardPage() {
 
   const handleSyncRepos = async () => {
     setSyncing(true);
-    const toastId = toast.loading("Synchronizing latest repositories from GitHub...");
+    const toastId = toast.loading(
+      "Synchronizing latest repositories from GitHub...",
+    );
     try {
       const res = await fetch("/api/user/sync-repos", {
         method: "POST",
@@ -328,13 +363,19 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.success) {
         setRepositories(data.repositories);
-        toast.success("GitHub repository register updated successfully!", { id: toastId });
+        toast.success("GitHub repository register updated successfully!", {
+          id: toastId,
+        });
       } else {
-        toast.error(data.error || "Failed to sync repositories.", { id: toastId });
+        toast.error(data.error || "Failed to sync repositories.", {
+          id: toastId,
+        });
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred while syncing repositories.", { id: toastId });
+      toast.error("An error occurred while syncing repositories.", {
+        id: toastId,
+      });
     } finally {
       setSyncing(false);
     }
@@ -342,7 +383,8 @@ export default function DashboardPage() {
 
   if (!user && !loading) return null;
 
-  const blueprints = STARTER_BLUEPRINTS[profile.fieldOfWork] || STARTER_BLUEPRINTS["other"];
+  const blueprints =
+    STARTER_BLUEPRINTS[profile.fieldOfWork] || STARTER_BLUEPRINTS["other"];
 
   const handleCopyToClipboard = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -365,20 +407,26 @@ export default function DashboardPage() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
   } as const;
 
   // Extract unique languages present in repos
   const uniqueLanguages = Array.from(
-    new Set(repositories.map((r) => r.language).filter(Boolean))
+    new Set(repositories.map((r) => r.language).filter(Boolean)),
   ) as string[];
 
   // Filter repos based on search and language dropdown
   const filteredRepos = repositories.filter((repo) => {
     const matchesSearch =
       repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesLanguage = selectedLanguage === "all" || repo.language === selectedLanguage;
+      (repo.description &&
+        repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesLanguage =
+      selectedLanguage === "all" || repo.language === selectedLanguage;
     return matchesSearch && matchesLanguage;
   });
 
@@ -396,10 +444,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent text-zinc-100 select-none relative overflow-hidden">
-      <SiteHeader />
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
 
       {/* Muted Premium Grid Canvas */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#141416_1px,transparent_1px),linear-gradient(to_bottom,#141416_1px,transparent_1px)] bg-size-[24px_24px]" />
       </div>
 
@@ -410,7 +462,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: -40, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: -40, x: "-50%" }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-blue-500 border border-blue-400 text-white font-mono text-xs font-semibold px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2"
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-blue-500 border border-blue-400 text-white font-mono text-xs font-semibold px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{activeNotification}</span>
@@ -418,7 +470,7 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <main className="relative z-10 max-w-[80vw] mx-auto pt-24 pb-20 space-y-6">
+      <main className="relative z-10 max-w-[80vw] mx-auto pt-10 pb-32 space-y-6">
         {/* Classy SaaS Header Section */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
@@ -462,17 +514,27 @@ export default function DashboardPage() {
             {/* Quick Metrics Bar */}
             <div className="flex items-center gap-6 text-[10px] font-mono bg-zinc-950/40 border border-zinc-800/60 p-2.5 rounded-xl px-4">
               <div className="space-y-0.5">
-                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">Cloud Region</span>
-                <span className="text-zinc-300 font-semibold uppercase">US-EAST-1</span>
+                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">
+                  Cloud Region
+                </span>
+                <span className="text-zinc-300 font-semibold uppercase">
+                  US-EAST-1
+                </span>
               </div>
               <div className="w-px h-6 bg-zinc-800" />
               <div className="space-y-0.5">
-                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">Cluster IP</span>
-                <span className="text-zinc-300 font-semibold font-mono">10.124.0.5</span>
+                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">
+                  Cluster IP
+                </span>
+                <span className="text-zinc-300 font-semibold font-mono">
+                  10.124.0.5
+                </span>
               </div>
               <div className="w-px h-6 bg-zinc-800" />
               <div className="space-y-0.5">
-                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">Verification</span>
+                <span className="text-zinc-500 block uppercase tracking-wider text-[8px]">
+                  Verification
+                </span>
                 <span className="text-emerald-400 font-semibold uppercase flex items-center gap-1">
                   Verified
                 </span>
@@ -486,7 +548,9 @@ export default function DashboardPage() {
           <button
             onClick={() => setActiveTab("overview")}
             className={`pb-2 px-1 text-sm font-semibold transition-all relative ${
-              activeTab === "overview" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "overview"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Workspace Overview
@@ -500,7 +564,9 @@ export default function DashboardPage() {
           <button
             onClick={() => setActiveTab("repositories")}
             className={`pb-2 px-1 text-sm font-semibold transition-all relative flex items-center gap-2 ${
-              activeTab === "repositories" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "repositories"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             GitHub Repositories
@@ -550,8 +616,8 @@ export default function DashboardPage() {
                             Account Handle
                           </label>
                           <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-200">
-                            <Hash className="w-3.5 h-3.5 text-zinc-600" />
-                            @{profile.username}
+                            <Hash className="w-3.5 h-3.5 text-zinc-600" />@
+                            {profile.username}
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -593,20 +659,33 @@ export default function DashboardPage() {
                       <div className="bg-zinc-950/20 border border-zinc-800/60 rounded-xl divide-y divide-zinc-800/60 p-0.5">
                         <div className="flex justify-between items-center py-2 px-3 text-[10px] font-mono">
                           <span className="text-zinc-500">Workspace Type</span>
-                          <span className="text-zinc-200 font-medium capitalize max-w-[120px] truncate" title={profile.useCase}>
+                          <span
+                            className="text-zinc-200 font-medium capitalize max-w-[120px] truncate"
+                            title={profile.useCase}
+                          >
                             {USE_CASE_MAP[profile.useCase] || profile.useCase}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-2 px-3 text-[10px] font-mono">
-                          <span className="text-zinc-500">Collaborator Scale</span>
-                          <span className="text-zinc-200 font-medium capitalize max-w-[120px] truncate" title={profile.teamSize}>
-                            {TEAM_SIZE_MAP[profile.teamSize] || profile.teamSize}
+                          <span className="text-zinc-500">
+                            Collaborator Scale
+                          </span>
+                          <span
+                            className="text-zinc-200 font-medium capitalize max-w-[120px] truncate"
+                            title={profile.teamSize}
+                          >
+                            {TEAM_SIZE_MAP[profile.teamSize] ||
+                              profile.teamSize}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-2 px-3 text-[10px] font-mono">
                           <span className="text-zinc-500">Tech Stack Core</span>
-                          <span className="text-zinc-200 font-medium capitalize max-w-[120px] truncate" title={profile.fieldOfWork}>
-                            {FIELD_MAP[profile.fieldOfWork] || profile.fieldOfWork?.replace("-", " ")}
+                          <span
+                            className="text-zinc-200 font-medium capitalize max-w-[120px] truncate"
+                            title={profile.fieldOfWork}
+                          >
+                            {FIELD_MAP[profile.fieldOfWork] ||
+                              profile.fieldOfWork?.replace("-", " ")}
                           </span>
                         </div>
                       </div>
@@ -631,31 +710,80 @@ export default function DashboardPage() {
                       <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold block">
                         Processor Diagnostics
                       </span>
-                      <h3 className="text-sm font-semibold text-white tracking-tight">
+                      <h3 className="text-sm font-semibold text-white ">
                         vCPU Frequency Load
                       </h3>
                     </div>
                     <div className="flex items-center gap-4 text-[10px] font-mono">
                       <span className="flex items-center gap-1.5 text-zinc-400">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                        <span className="text-blue-500 font-bold">{cpuValue} GHz</span>
+                        <span className="text-blue-500 font-bold">
+                          {cpuValue} GHz
+                        </span>
                       </span>
                     </div>
                   </div>
 
                   <div className="h-[250px] min-h-[250px] w-full mt-4 font-mono text-[10px]">
                     <ResponsiveContainer width="100%" height={250}>
-                      <AreaChart data={systemHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart
+                        data={systemHistory}
+                        margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                      >
                         <defs>
-                          <linearGradient id="cpuGlow" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          <linearGradient
+                            id="cpuGlow"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0.2}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="time" stroke="#52525b" fontSize={8} tickLine={false} axisLine={false} />
-                        <YAxis domain={[0, 5]} stroke="#52525b" fontSize={8} tickLine={false} axisLine={false} tickFormatter={(val) => `${val} GHz`} />
-                        <Tooltip contentStyle={{ backgroundColor: "#09090b", borderColor: "#27272a", fontSize: "9px", fontFamily: "monospace", color: "#fff", borderRadius: "8px" }} labelClassName="text-zinc-500 font-bold" />
-                        <Area type="linear" dataKey="cpu" stroke="#3b82f6" strokeWidth={1.5} fillOpacity={1} fill="url(#cpuGlow)" />
+                        <XAxis
+                          dataKey="time"
+                          stroke="#52525b"
+                          fontSize={8}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          domain={[0, 5]}
+                          stroke="#52525b"
+                          fontSize={8}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => `${val} GHz`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#09090b",
+                            borderColor: "#27272a",
+                            fontSize: "9px",
+                            fontFamily: "monospace",
+                            color: "#fff",
+                            borderRadius: "8px",
+                          }}
+                          labelClassName="text-zinc-500 font-bold"
+                        />
+                        <Area
+                          type="linear"
+                          dataKey="cpu"
+                          stroke="#3b82f6"
+                          strokeWidth={1.5}
+                          fillOpacity={1}
+                          fill="url(#cpuGlow)"
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -672,31 +800,80 @@ export default function DashboardPage() {
                       <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold block">
                         Memory Diagnostics
                       </span>
-                      <h3 className="text-sm font-semibold text-white tracking-tight">
+                      <h3 className="text-sm font-semibold text-white ">
                         RAM Block Allocation
                       </h3>
                     </div>
                     <div className="flex items-center gap-4 text-[10px] font-mono">
                       <span className="flex items-center gap-1.5 text-zinc-400">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-emerald-500 font-bold">{ramValue} GB</span>
+                        <span className="text-emerald-500 font-bold">
+                          {ramValue} GB
+                        </span>
                       </span>
                     </div>
                   </div>
 
                   <div className="h-[250px] min-h-[250px] w-full mt-4 font-mono text-[10px]">
                     <ResponsiveContainer width="100%" height={250}>
-                      <AreaChart data={systemHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart
+                        data={systemHistory}
+                        margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                      >
                         <defs>
-                          <linearGradient id="ramGlow" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          <linearGradient
+                            id="ramGlow"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#10b981"
+                              stopOpacity={0.2}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#10b981"
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="time" stroke="#52525b" fontSize={8} tickLine={false} axisLine={false} />
-                        <YAxis domain={[0, 16]} stroke="#52525b" fontSize={8} tickLine={false} axisLine={false} tickFormatter={(val) => `${val} GB`} />
-                        <Tooltip contentStyle={{ backgroundColor: "#09090b", borderColor: "#27272a", fontSize: "9px", fontFamily: "monospace", color: "#fff", borderRadius: "8px" }} labelClassName="text-zinc-500 font-bold" />
-                        <Area type="step" dataKey="ram" stroke="#10b981" strokeWidth={1.5} fillOpacity={1} fill="url(#ramGlow)" />
+                        <XAxis
+                          dataKey="time"
+                          stroke="#52525b"
+                          fontSize={8}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          domain={[0, 16]}
+                          stroke="#52525b"
+                          fontSize={8}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => `${val} GB`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#09090b",
+                            borderColor: "#27272a",
+                            fontSize: "9px",
+                            fontFamily: "monospace",
+                            color: "#fff",
+                            borderRadius: "8px",
+                          }}
+                          labelClassName="text-zinc-500 font-bold"
+                        />
+                        <Area
+                          type="step"
+                          dataKey="ram"
+                          stroke="#10b981"
+                          strokeWidth={1.5}
+                          fillOpacity={1}
+                          fill="url(#ramGlow)"
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -715,7 +892,11 @@ export default function DashboardPage() {
                     Provision Tech Stack Starter Blueprints
                   </span>
                   <p className="text-zinc-400 text-xs">
-                    Based on your selection of <span className="text-blue-500 font-semibold">{FIELD_MAP[profile.fieldOfWork] || profile.fieldOfWork}</span>, the following starter packages are ready.
+                    Based on your selection of{" "}
+                    <span className="text-blue-500 font-semibold">
+                      {FIELD_MAP[profile.fieldOfWork] || profile.fieldOfWork}
+                    </span>
+                    , the following starter packages are ready.
                   </p>
                 </div>
 
@@ -727,7 +908,7 @@ export default function DashboardPage() {
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                          <h3 className="text-xs font-semibold text-white tracking-tight flex items-center gap-2">
+                          <h3 className="text-xs font-semibold text-white  flex items-center gap-2">
                             <Terminal className="w-3.5 h-3.5 text-blue-500" />
                             {item.title}
                           </h3>
@@ -744,14 +925,16 @@ export default function DashboardPage() {
                           <span className="truncate pr-3">{item.command}</span>
                           <button
                             type="button"
-                            onClick={() => handleCopyToClipboard(item.command, idx)}
-                            className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                            onClick={() =>
+                              handleCopyToClipboard(item.command, idx)
+                            }
+                            className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer active:scale-95"
                             title="Copy claim command"
                           >
                             {copiedIndex === idx ? (
-                              <Check className="w-3 h-3 text-emerald-400" />
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
                             ) : (
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3.5 h-3.5" />
                             )}
                           </button>
                         </div>
@@ -763,7 +946,9 @@ export default function DashboardPage() {
                           href={item.docsUrl}
                           onClick={(e) => {
                             e.preventDefault();
-                            setActiveNotification(`Documentation details claimed! Link: ${item.docsUrl}`);
+                            setActiveNotification(
+                              `Documentation details claimed! Link: ${item.docsUrl}`,
+                            );
                             setTimeout(() => setActiveNotification(null), 3000);
                           }}
                           className="text-blue-500 hover:text-blue-400 flex items-center gap-1 transition-colors"
@@ -790,25 +975,31 @@ export default function DashboardPage() {
               <div className="bg-zinc-900/10 border border-zinc-800/80 p-6 md:p-8 rounded-3xl backdrop-blur-2xl shadow-2xl relative">
                 <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-6">
                   <h3 className="text-sm font-mono tracking-wider uppercase text-zinc-300 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    <Cpu className="w-4 h-4 text-blue-500" />
                     Top 5 Recently Created Repositories
                   </h3>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase">First by Creation Date</span>
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                      First by Creation Date
+                    </span>
                     <Button
+                      size="sm"
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs h-8 px-3 flex items-center gap-1.5 rounded-lg transition-all shrink-0 border border-blue-500/20"
+                      className="font-mono text-xs gap-1.5"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Create Repo
                     </Button>
                     <Button
+                      size="sm"
+                      variant="outline"
                       onClick={handleSyncRepos}
                       disabled={syncing}
-                      variant="outline"
-                      className="border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 hover:text-white text-zinc-300 font-mono text-xs h-8 px-3 flex items-center gap-1.5 rounded-lg backdrop-blur-md transition-all shrink-0"
+                      className="font-mono text-xs gap-1.5"
                     >
-                      <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`}
+                      />
                       Sync Repos
                     </Button>
                   </div>
@@ -825,17 +1016,22 @@ export default function DashboardPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex flex-col gap-1 truncate pr-1">
                               <Link href={`/repos/${repo.id}`}>
-                                <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate" title={repo.name}>
+                                <h4
+                                  className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate"
+                                  title={repo.name}
+                                >
                                   {repo.name}
                                 </h4>
                               </Link>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
-                                  repo.private
-                                    ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                    : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
-                                )}>
+                                <span
+                                  className={cn(
+                                    "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
+                                    repo.private
+                                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                      : "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+                                  )}
+                                >
                                   {repo.private ? "Private" : "Public"}
                                 </span>
                               </div>
@@ -851,7 +1047,11 @@ export default function DashboardPage() {
                           </div>
 
                           <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 h-8">
-                            {repo.description || <span className="italic text-zinc-700">No description provided.</span>}
+                            {repo.description || (
+                              <span className="italic text-zinc-700">
+                                No description provided.
+                              </span>
+                            )}
                           </p>
                         </div>
 
@@ -862,7 +1062,9 @@ export default function DashboardPage() {
                                 <span
                                   className={`w-2 h-2 rounded-full ${
                                     LANGUAGE_COLOR_MAP[repo.language]
-                                      ? LANGUAGE_COLOR_MAP[repo.language].split(" ")[0]
+                                      ? LANGUAGE_COLOR_MAP[repo.language].split(
+                                          " ",
+                                        )[0]
                                       : "bg-zinc-400"
                                   }`}
                                 />
@@ -877,7 +1079,10 @@ export default function DashboardPage() {
                           </div>
 
                           <span className="text-[9px] text-zinc-600 font-mono">
-                            Created {repo.created_at ? new Date(repo.created_at).toLocaleDateString() : "unknown"}
+                            Created{" "}
+                            {repo.created_at
+                              ? new Date(repo.created_at).toLocaleDateString()
+                              : "unknown"}
                           </span>
                         </div>
                       </div>
@@ -900,7 +1105,8 @@ export default function DashboardPage() {
                       All Synced Repositories
                     </h3>
                     <p className="text-zinc-500 font-mono text-[10px] tracking-wider uppercase">
-                      Displaying {filteredRepos.length} of {repositories.length} total repositories
+                      Displaying {filteredRepos.length} of {repositories.length}{" "}
+                      total repositories
                     </p>
                   </div>
 
@@ -921,9 +1127,15 @@ export default function DashboardPage() {
                       onChange={(e) => setSelectedLanguage(e.target.value)}
                       className="w-full sm:w-auto px-3.5 h-10 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-zinc-700 transition-all font-mono"
                     >
-                      <option value="all" className="bg-[#09090b]">All Languages</option>
+                      <option value="all" className="bg-[#09090b]">
+                        All Languages
+                      </option>
                       {uniqueLanguages.map((lang) => (
-                        <option key={lang} value={lang} className="bg-[#09090b]">
+                        <option
+                          key={lang}
+                          value={lang}
+                          className="bg-[#09090b]"
+                        >
                           {lang}
                         </option>
                       ))}
@@ -951,17 +1163,22 @@ export default function DashboardPage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex flex-col gap-1 truncate pr-1">
                                 <Link href={`/repos/${repo.id}`}>
-                                  <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate" title={repo.name}>
+                                  <h4
+                                    className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate"
+                                    title={repo.name}
+                                  >
                                     {repo.name}
                                   </h4>
                                 </Link>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className={cn(
-                                    "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
-                                    repo.private
-                                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                      : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
-                                  )}>
+                                  <span
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
+                                      repo.private
+                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                        : "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+                                    )}
+                                  >
                                     {repo.private ? "Private" : "Public"}
                                   </span>
                                 </div>
@@ -977,7 +1194,11 @@ export default function DashboardPage() {
                             </div>
 
                             <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 h-8">
-                              {repo.description || <span className="italic text-zinc-700">No description provided.</span>}
+                              {repo.description || (
+                                <span className="italic text-zinc-700">
+                                  No description provided.
+                                </span>
+                              )}
                             </p>
                           </div>
 
@@ -988,7 +1209,9 @@ export default function DashboardPage() {
                                   <span
                                     className={`w-2 h-2 rounded-full ${
                                       LANGUAGE_COLOR_MAP[repo.language]
-                                        ? LANGUAGE_COLOR_MAP[repo.language].split(" ")[0]
+                                        ? LANGUAGE_COLOR_MAP[
+                                            repo.language
+                                          ].split(" ")[0]
                                         : "bg-zinc-400"
                                     }`}
                                   />
@@ -997,7 +1220,9 @@ export default function DashboardPage() {
                               ) : (
                                 <>
                                   <Tag className="w-3.5 h-3.5 text-zinc-600" />
-                                  <span className="text-zinc-600">Untagged</span>
+                                  <span className="text-zinc-600">
+                                    Untagged
+                                  </span>
                                 </>
                               )}
                             </div>
@@ -1026,9 +1251,12 @@ export default function DashboardPage() {
                       <div className="inline-flex p-3 rounded-full bg-zinc-900/30 border border-zinc-800/60 text-zinc-600 mb-3">
                         <Github className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-semibold text-zinc-300">No repositories found</h4>
+                      <h4 className="text-sm font-semibold text-zinc-300">
+                        No repositories found
+                      </h4>
                       <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
-                        Try adjusting your search criteria, selecting a different language, or synchronizing repositories.
+                        Try adjusting your search criteria, selecting a
+                        different language, or synchronizing repositories.
                       </p>
                     </motion.div>
                   )}
@@ -1092,7 +1320,7 @@ export default function DashboardPage() {
                     placeholder="A brief description of your repository"
                     value={newRepoDesc}
                     onChange={(e) => setNewRepoDesc(e.target.value)}
-                    className="w-full min-h-[80px] p-3 bg-zinc-900 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none resize-none"
+                    className="w-full min-h-20 p-3 bg-zinc-900 border border-zinc-800 rounded font-mono text-xs text-zinc-300 focus:border-zinc-500 focus:outline-none resize-none"
                   />
                 </div>
 
@@ -1118,14 +1346,16 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
                     variant="outline"
-                    className="border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-white text-xs h-9 px-4 rounded-lg font-mono"
+                    size="sm"
+                    className="font-mono text-xs px-4"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
+                    size="sm"
                     disabled={creatingRepo || !newRepoName.trim()}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs h-9 px-4 rounded-lg font-mono flex items-center gap-1.5"
+                    className="font-mono text-xs px-4 flex items-center gap-1.5"
                   >
                     {creatingRepo ? (
                       <>
