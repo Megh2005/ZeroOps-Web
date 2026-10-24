@@ -4,7 +4,7 @@ import type React from "react";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
-import { Loader2 } from "lucide-react";
+import { FiLoader } from "react-icons/fi";
 
 const PUBLIC_PATHS = [
   "/",
@@ -43,7 +43,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#050505]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <FiLoader className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
