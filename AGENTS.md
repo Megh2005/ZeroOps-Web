@@ -18,7 +18,7 @@
 - **Styling**: Tailwind CSS v4, PostCSS, OKLCH color palettes, custom gradients, Framer Motion animations.
 - **Typography**: Google Font Roboto Slab (`Roboto_Slab`, `--font-roboto-slab`).
 - **AI Engine**: Google Gemini API (`@google/generative-ai`), default model `gemini-3.1-flash-lite` (configured in `lib/gemini.ts`).
-- **Database & State**: Google Firebase Firestore (Collections: `users`, `deployments`, `commits`).
+- **Database & State**: MongoDB with Mongoose (Database: `zeroops`, Collections: `users`, `deployments`, `commits`).
 - **Authentication**: NextAuth.js v4 with GitHub Provider (scopes: `read:user`, `user:email`, `repo`).
 - **Cloud Integration**: Google Cloud Platform OAuth 2.0 (scopes: `openid`, `email`, `https://www.googleapis.com/auth/cloud-platform`).
 - **Sandbox Execution**: Local Docker Engine (`dockerode`, `tar-stream`) running isolated Alpine Linux containers with Terraform v1.7.0 CLI.
