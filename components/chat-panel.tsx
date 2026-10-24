@@ -17,8 +17,6 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { chatAboutArchitecture } from "@/lib/gemini"
-import { doc, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import type { CanvasComponent, Connection } from "@/types/architecture"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 
