@@ -1,7 +1,7 @@
 import NextAuth, { AuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
-import { doc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User } from "@/lib/models";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -66,51 +66,50 @@ export const authOptions: AuthOptions = {
                 description: repo.description || "",
                 language: repo.language || "",
                 stargazers_count: repo.stargazers_count || 0,
+                watchers_count: repo.watchers_count || 0,
                 forks_count: repo.forks_count || 0,
                 private: repo.private || false,
                 created_at: repo.created_at || "",
                 updated_at: repo.updated_at || "",
+                pushed_at: repo.pushed_at || "",
               }));
             }
           } else {
             console.error("Failed to fetch repositories from GitHub", await reposResponse.text());
           }
 
-          // Check if user already exists in Firestore by githubId
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("githubId", "==", githubId));
-          const querySnapshot = await getDocs(q);
+          // Connect to MongoDB
+          await connectToDatabase();
 
-          if (!querySnapshot.empty) {
-            // Update existing user record (document ID is their email)
-            const userDoc = querySnapshot.docs[0];
-            const userRef = doc(db, "users", userDoc.id);
-            await updateDoc(userRef, {
-              email,
-              username,
-              name,
-              photoURL,
-              repositories,
-              updatedAt: new Date().toISOString(),
-            });
+          // Check if user already exists in MongoDB by githubId or email
+          const existingUser = await User.findOne({
+            $or: [{ githubId }, { email: email.toLowerCase() }],
+          });
+
+          if (existingUser) {
+            // Update existing user record
+            existingUser.email = email.toLowerCase();
+            existingUser.username = username;
+            if (name) existingUser.name = name;
+            if (photoURL) existingUser.photoURL = photoURL;
+            existingUser.githubId = githubId;
+            existingUser.repositories = repositories;
+            await existingUser.save();
           } else {
-            // Create a new user record keyed by email
-            const userRef = doc(db, "users", email);
-            await setDoc(userRef, {
-              email,
+            // Create a new user record in MongoDB
+            await User.create({
+              email: email.toLowerCase(),
               username,
-              name,
+              name: name || "",
               githubId,
-              photoURL,
+              photoURL: photoURL || "",
               repositories,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
             });
           }
           return true;
         } catch (error) {
-          console.error("Error saving user to Firestore during sign in:", error);
-          // Allow sign in even if Firestore fails (fail-safe fallback) but log the error
+          console.error("Error saving user to MongoDB during sign in:", error);
+          // Fail-safe fallback: allow sign-in even if DB temporary disconnect
           return true;
         }
       }

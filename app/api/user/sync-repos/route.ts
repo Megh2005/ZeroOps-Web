@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { connectToDatabase } from "@/lib/mongodb";
+import { User } from "@/lib/models";
 import { invalidateUserCache } from "@/lib/repo-cache";
 
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || !(session as any).accessToken) {
+    if (!session?.user?.email || !(session as any).accessToken) {
       return NextResponse.json(
         { success: false, error: "Session desynced. Please sign out and sign back in to authorize private repository access." },
         { status: 401 }
@@ -40,29 +40,28 @@ export async function POST() {
         description: repo.description || "",
         language: repo.language || "",
         stargazers_count: repo.stargazers_count || 0,
+        watchers_count: repo.watchers_count || 0,
         forks_count: repo.forks_count || 0,
         private: repo.private || false,
         created_at: repo.created_at || "",
         updated_at: repo.updated_at || "",
+        pushed_at: repo.pushed_at || "",
       }));
     }
 
-    const userRef = doc(db, "users", session.user.email!);
-    const userSnap = await getDoc(userRef);
+    await connectToDatabase();
+    const updatedUser = await User.findOneAndUpdate(
+      { email: session.user.email.toLowerCase() },
+      { $set: { repositories } },
+      { new: true }
+    );
 
-    if (!userSnap.exists()) {
+    if (!updatedUser) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    await updateDoc(userRef, {
-      repositories,
-      updatedAt: new Date(),
-    });
-
     // Invalidate cached repository data on manual sync
-    if (session.user.email) {
-      invalidateUserCache(session.user.email);
-    }
+    invalidateUserCache(session.user.email);
 
     return NextResponse.json({ success: true, repositories });
   } catch (error: any) {
