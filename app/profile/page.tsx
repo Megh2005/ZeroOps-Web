@@ -111,7 +111,6 @@ export default function ProfilePage() {
   const [syncing, setSyncing] = useState(false);
   const [repositories, setRepositories] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("profile"); // "profile" or "repositories"
-  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     if (dbProfile?.repositories) {
@@ -119,47 +118,7 @@ export default function ProfilePage() {
     }
   }, [dbProfile]);
 
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const gcpSuccess = url.searchParams.get("gcp_success");
-    const gcpError = url.searchParams.get("gcp_error");
 
-    if (gcpSuccess) {
-      toast.success("Successfully connected Google Cloud Platform!");
-      url.searchParams.delete("gcp_success");
-      window.history.replaceState({}, document.title, url.toString());
-    } else if (gcpError) {
-      toast.error(
-        `Failed to link Google Cloud: ${decodeURIComponent(gcpError)}`,
-      );
-      url.searchParams.delete("gcp_error");
-      window.history.replaceState({}, document.title, url.toString());
-    }
-  }, []);
-
-  const handleDisconnectGcp = async () => {
-    setDisconnecting(true);
-    const toastId = toast.loading("Disconnecting Google Cloud Platform...");
-    try {
-      const res = await fetch("/api/gcp/disconnect", { method: "POST" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success("Google Cloud successfully disconnected!", {
-          id: toastId,
-        });
-        window.location.reload();
-      } else {
-        toast.error(data.error || "Failed to disconnect Google Cloud.", {
-          id: toastId,
-        });
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Failed to disconnect Google Cloud.", { id: toastId });
-    } finally {
-      setDisconnecting(false);
-    }
-  };
 
   const handleSyncRepos = async () => {
     setSyncing(true);
@@ -508,133 +467,7 @@ export default function ProfilePage() {
                 </Card>
               </motion.div>
 
-              {/* GOOGLE CLOUD INTEGRATION CARD */}
-              <motion.div variants={itemVariants} className="lg:col-span-12">
-                <Card className="bg-zinc-900/10 border-zinc-800/80 backdrop-blur-2xl p-6 rounded-2xl shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl" />
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Status & Actions */}
-                    <div className="lg:col-span-7 space-y-6">
-                      <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-                        <CardTitle className="flex items-center gap-2.5 text-xs font-mono tracking-wider uppercase text-zinc-400">
-                          <Layers className="w-4 h-4 text-blue-500" />
-                          Google Cloud Platform Integration
-                        </CardTitle>
-                        {dbProfile?.gcpLinkedEmail ? (
-                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-blue-500/10 border border-blue-500/20 text-blue-400 uppercase tracking-widest">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            Connected
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-zinc-800 border border-zinc-700 text-zinc-400 uppercase tracking-widest">
-                            Disconnected
-                          </span>
-                        )}
-                      </div>
 
-                      <div className="space-y-4">
-                        <p className="text-zinc-400 text-sm leading-relaxed">
-                          Link your Google Cloud Platform account to enable
-                          direct Terraform deployments. Once connected, you can
-                          apply your visual canvas configurations into active
-                          GCP cloud environments with a single click.
-                        </p>
-
-                        {dbProfile?.gcpLinkedEmail ? (
-                          <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold">
-                                G
-                              </div>
-                              <div>
-                                <h5 className="text-xs text-zinc-400 font-mono">
-                                  Linked Google Account
-                                </h5>
-                                <p className="text-sm font-semibold text-white">
-                                  {dbProfile.gcpLinkedEmail}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              onClick={handleDisconnectGcp}
-                              disabled={disconnecting}
-                              variant="destructive"
-                              size="sm"
-                              className="font-mono text-xs"
-                            >
-                              Disconnect Google Cloud
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            asChild
-                            size="default"
-                            className="font-semibold text-xs"
-                          >
-                            <Link href="/api/auth/gcp">
-                              Connect Google Cloud Account
-                            </Link>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* API Status Checklist */}
-                    <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-zinc-800/80 pt-6 lg:pt-0 lg:pl-8 space-y-4">
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold">
-                        Required Google Cloud APIs
-                      </h4>
-                      <p className="text-xs text-zinc-500">
-                        Please ensure the following APIs are enabled in your
-                        Google Cloud Console for the target project:
-                      </p>
-                      <ul className="space-y-2.5 font-mono text-[11px]">
-                        {[
-                          {
-                            name: "Cloud Resource Manager API",
-                            id: "cloudresourcemanager.googleapis.com",
-                          },
-                          {
-                            name: "Compute Engine API",
-                            id: "compute.googleapis.com",
-                          },
-                          {
-                            name: "Cloud Run Admin API",
-                            id: "run.googleapis.com",
-                          },
-                          {
-                            name: "Cloud SQL Admin API",
-                            id: "sqladmin.googleapis.com",
-                          },
-                          {
-                            name: "Cloud Storage JSON API",
-                            id: "storage.googleapis.com",
-                          },
-                          {
-                            name: "Google Kubernetes Engine API",
-                            id: "container.googleapis.com",
-                          },
-                        ].map((api) => (
-                          <li
-                            key={api.id}
-                            className="flex items-start gap-2 text-zinc-300"
-                          >
-                            <span className="text-blue-500 mt-0.5">•</span>
-                            <div>
-                              <div className="font-semibold text-zinc-200">
-                                {api.name}
-                              </div>
-                              <div className="text-[9px] text-zinc-500">
-                                {api.id}
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
             </motion.div>
           ) : (
             <motion.div
