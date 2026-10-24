@@ -9,11 +9,10 @@ import { FiLoader } from "react-icons/fi";
 const PUBLIC_PATHS = [
   "/",
   "/auth",
-  "/docs",
 ];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -21,24 +20,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (!user) {
         // If not logged in and trying to access a protected route
-        if (!PUBLIC_PATHS.includes(pathname) && pathname !== "/onboarding") {
+        if (!PUBLIC_PATHS.includes(pathname)) {
           router.push("/auth");
         }
       } else {
-        // If logged in
-        if (!profile?.useCase && pathname !== "/onboarding") {
-          // Logged in but no profile (or incomplete), must onboard
-          router.push("/onboarding");
-        } else if (
-          profile?.useCase &&
-          (pathname === "/onboarding" || pathname === "/auth")
-        ) {
-          // Logged in and has completed profile, don't allow onboarding or auth page
-          router.push("/dashboard");
+        // If logged in and on the auth page, redirect directly to profile
+        if (pathname === "/auth") {
+          router.push("/profile");
         }
       }
     }
-  }, [user, profile, loading, pathname, router]);
+  }, [user, loading, pathname, router]);
 
   if (loading) {
     return (
@@ -49,17 +41,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // While determining redirection, show nothing to avoid flash of content
-  if (!user && !PUBLIC_PATHS.includes(pathname) && pathname !== "/onboarding") {
+  if (!user && !PUBLIC_PATHS.includes(pathname)) {
     return null;
   }
-  if (user && !profile?.useCase && pathname !== "/onboarding") {
-    return null;
-  }
-  if (
-    user &&
-    profile?.useCase &&
-    (pathname === "/onboarding" || pathname === "/auth")
-  ) {
+  if (user && pathname === "/auth") {
     return null;
   }
 

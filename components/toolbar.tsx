@@ -13,7 +13,6 @@ import {
   Layers,
   Trash2,
   RotateCcw,
-  Book,
   UploadCloud,
   Bot,
 } from "lucide-react";
@@ -112,16 +111,6 @@ export function Toolbar({
             <RotateCcw className="w-4 h-4" />
             <span>Example</span>
           </Button>
-          <Link href="/docs">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-muted-foreground hover:text-primary"
-            >
-              <Book className="w-4 h-4" />
-              <span>Docs</span>
-            </Button>
-          </Link>
         </div>
       </div>
 

@@ -17,18 +17,15 @@ import {
 import { cn } from "@/lib/utils";
 import {
   FiHome,
-  FiGrid,
   FiLayers,
   FiCpu,
   FiCode,
   FiTerminal,
   FiCloud,
   FiGitCommit,
-  FiBookOpen,
   FiUser,
   FiLogOut,
   FiLogIn,
-  FiSliders,
 } from "react-icons/fi";
 import { FaGithub } from "react-icons/fa6";
 
@@ -50,12 +47,6 @@ const PUBLIC_NAV_ITEMS: DockItem[] = [
     exact: true,
   },
   {
-    id: "docs",
-    href: "/docs",
-    label: "Architecture & Documentation",
-    icon: FiBookOpen,
-  },
-  {
     id: "auth",
     href: "/auth",
     label: "Sign In with GitHub",
@@ -63,28 +54,7 @@ const PUBLIC_NAV_ITEMS: DockItem[] = [
   },
 ];
 
-// In-progress onboarding navigation items
-const ONBOARDING_NAV_ITEMS: DockItem[] = [
-  {
-    id: "home",
-    href: "/",
-    label: "Home",
-    icon: FiHome,
-    exact: true,
-  },
-  {
-    id: "onboarding",
-    href: "/onboarding",
-    label: "Complete Onboarding Setup",
-    icon: FiSliders,
-  },
-  {
-    id: "docs",
-    href: "/docs",
-    label: "Architecture & Documentation",
-    icon: FiBookOpen,
-  },
-];
+
 
 // Full developer suite navigation items when fully authenticated & onboarded
 const AUTHENTICATED_NAV_ITEMS: DockItem[] = [
@@ -96,10 +66,10 @@ const AUTHENTICATED_NAV_ITEMS: DockItem[] = [
     exact: true,
   },
   {
-    id: "dashboard",
-    href: "/dashboard",
-    label: "Projects & Repositories",
-    icon: FiGrid,
+    id: "profile",
+    href: "/profile",
+    label: "Developer Profile & Repos",
+    icon: FiUser,
   },
   {
     id: "builder",
@@ -137,12 +107,6 @@ const AUTHENTICATED_NAV_ITEMS: DockItem[] = [
     label: "Git Commits & Rollback Ledger",
     icon: FiGitCommit,
   },
-  {
-    id: "docs",
-    href: "/docs",
-    label: "Architecture & Documentation",
-    icon: FiBookOpen,
-  },
 ];
 
 export function NavigationDock() {
@@ -165,9 +129,7 @@ export function NavigationDock() {
   // Determine current active navigation set based on auth state
   const activeNavItems = !user
     ? PUBLIC_NAV_ITEMS
-    : !profile?.useCase
-      ? ONBOARDING_NAV_ITEMS
-      : AUTHENTICATED_NAV_ITEMS;
+    : AUTHENTICATED_NAV_ITEMS;
 
   return (
     <aside
