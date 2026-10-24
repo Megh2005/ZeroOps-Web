@@ -1,17 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowLeft, Sparkles, Loader2, Code2, Cpu } from "lucide-react"
+import { useTheme } from "next-themes"
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles"
+import { FiArrowLeft, FiLoader, FiCode, FiCpu, FiLayers } from "react-icons/fi"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { terraformToArchitecture } from "@/lib/gemini"
 
 export default function CodeToBuilderPage() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [code, setCode] = useState("")
   const [isTransforming, setIsTransforming] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff"
 
   const handleTransform = async () => {
     if (!code.trim()) {
@@ -45,18 +55,24 @@ export default function CodeToBuilderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans relative overflow-hidden pb-24">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50 p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.push("/builder")} className="gap-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900">
-            <ArrowLeft className="w-4 h-4" />
+          <Button variant="ghost" size="sm" onClick={() => router.push("/builder")} className="gap-2 text-zinc-400 hover:text-zinc-100">
+            <FiArrowLeft className="w-4 h-4" />
             Back to Builder
           </Button>
           <div className="w-px h-8 bg-zinc-800 mx-2 hidden md:block" />
           <div>
             <h1 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
-              <Code2 className="w-5 h-5 text-emerald-400" /> Terraform to Architecture
+              <FiCode className="w-5 h-5 text-emerald-400" /> Terraform to Architecture
             </h1>
             <p className="text-sm text-zinc-400 mt-1">Reverse-engineer Infrastructure as Code into a visual canvas</p>
           </div>
@@ -72,18 +88,18 @@ export default function CodeToBuilderPage() {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="p-8 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl shadow-xl flex flex-col gap-4"
+              className="p-8 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl shadow-xl flex flex-col gap-4 backdrop-blur-xl"
             >
               <div className="p-3 bg-blue-500/10 rounded-xl w-fit">
-                <Cpu className="w-6 h-6 text-blue-400" />
+                <FiCpu className="w-6 h-6 text-blue-400" />
               </div>
               <h2 className="text-2xl font-bold text-zinc-100">How it works</h2>
-              <p className="text-zinc-400 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed text-sm">
                 Paste your raw Google Cloud Terraform code into the editor. Our AI engine will analyze the resources, map them to visual components, and attempt to build a logical architecture diagram for you automatically.
               </p>
               
-              <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm leading-relaxed">
-                <strong className="block mb-1">Note on Layout:</strong>
+              <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs leading-relaxed">
+                <strong className="block mb-1 text-sm">Note on Layout:</strong>
                 Because Terraform doesn't have visual X/Y coordinates, the AI will guess the layout. You may need to drag and drop the blocks to organize them perfectly once imported!
               </div>
             </motion.div>
@@ -93,7 +109,7 @@ export default function CodeToBuilderPage() {
           <div className="w-full md:w-2/3 flex flex-col flex-1 min-h-[500px]">
             <div className="flex items-center justify-between bg-zinc-900/50 p-4 border border-b-0 border-zinc-800/80 rounded-t-2xl">
               <span className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <Code2 className="w-4 h-4" /> main.tf Input
+                <FiCode className="w-4 h-4" /> main.tf Input
               </span>
             </div>
             <textarea
@@ -104,18 +120,18 @@ export default function CodeToBuilderPage() {
             />
             <div className="bg-zinc-900/50 p-4 border border-t-0 border-zinc-800/80 rounded-b-2xl flex justify-end">
               <Button
-                size="lg"
+                size="default"
                 onClick={handleTransform}
                 disabled={isTransforming || !code.trim()}
-                className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/20"
+                className="gap-2"
               >
                 {isTransforming ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Analyzing Infrastructure...
+                    <FiLoader className="w-4 h-4 animate-spin" /> Analyzing Infrastructure...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" /> Transform to Architecture
+                    <FiLayers className="w-4 h-4" /> Transform to Architecture
                   </>
                 )}
               </Button>

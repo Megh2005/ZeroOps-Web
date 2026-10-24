@@ -2,7 +2,17 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { X, Send, Sparkles, Loader2, ShieldAlert, DollarSign, Bot, User, HelpCircle } from "lucide-react"
+import {
+  FiX,
+  FiSend,
+  FiCpu,
+  FiLoader,
+  FiShield,
+  FiDollarSign,
+  FiUser,
+  FiHelpCircle,
+  FiCheckCircle,
+} from "react-icons/fi"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
@@ -28,22 +38,22 @@ const PRESET_PROMPTS = [
   {
     label: "Security Audit",
     prompt: "Audit this architecture for security risks, open ports, and IAM best practices.",
-    icon: <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+    icon: <FiShield className="w-3.5 h-3.5 text-rose-400" />
   },
   {
     label: "Cost Optimization",
     prompt: "How can I optimize the monthly cost of this infrastructure?",
-    icon: <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+    icon: <FiDollarSign className="w-3.5 h-3.5 text-emerald-400" />
   },
   {
     label: "Best Practices",
     prompt: "Does this GCP architecture follow standard reliability and scalability patterns?",
-    icon: <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+    icon: <FiCheckCircle className="w-3.5 h-3.5 text-blue-400" />
   },
   {
     label: "Explain Connections",
     prompt: "List all components on my canvas and explain how they connect and communicate.",
-    icon: <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+    icon: <FiHelpCircle className="w-3.5 h-3.5 text-amber-400" />
   }
 ]
 
@@ -111,7 +121,7 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <Bot className="w-5 h-5" />
+            <FiCpu className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-semibold text-card-foreground">Architect AI</h3>
@@ -121,8 +131,8 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <X className="w-4 h-4 text-muted-foreground" />
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer active:scale-95">
+          <FiX className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
 
@@ -133,8 +143,8 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
             key={i}
             className={`flex gap-2 max-w-[90%] ${msg.role === "user" ? "self-end flex-row-reverse" : "self-start"}`}
           >
-            <div className={`p-1 rounded-lg h-fit shrink-0 ${msg.role === "user" ? "bg-primary/10 text-primary" : "bg-primary/10 text-primary"}`}>
-              {msg.role === "user" ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+            <div className={`p-1.5 rounded-lg h-fit shrink-0 ${msg.role === "user" ? "bg-primary/10 text-primary" : "bg-primary/10 text-primary"}`}>
+              {msg.role === "user" ? <FiUser className="w-3.5 h-3.5" /> : <FiCpu className="w-3.5 h-3.5" />}
             </div>
             <div className={`p-2.5 rounded-2xl text-[11px] leading-relaxed ${
               msg.role === "user" 
@@ -149,11 +159,11 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
         ))}
         {isLoading && (
           <div className="flex gap-2 max-w-[90%] self-start">
-            <div className="p-1 rounded-lg h-fit shrink-0 bg-primary/10 text-primary">
-              <Bot className="w-3.5 h-3.5" />
+            <div className="p-1.5 rounded-lg h-fit shrink-0 bg-primary/10 text-primary">
+              <FiCpu className="w-3.5 h-3.5" />
             </div>
             <div className="p-2.5 rounded-2xl text-[11px] bg-accent/40 text-muted-foreground rounded-tl-none border border-border flex items-center gap-2">
-              <Loader2 className="w-3 h-3 animate-spin text-primary" />
+              <FiLoader className="w-3.5 h-3.5 animate-spin text-primary" />
               Analyzing...
             </div>
           </div>
@@ -170,7 +180,7 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
               <button
                 key={idx}
                 onClick={() => handleSend(preset.prompt)}
-                className="flex items-center gap-1.5 p-2 bg-background hover:bg-muted border border-border rounded-lg text-left text-[10px] font-medium transition-colors text-muted-foreground"
+                className="flex items-center gap-1.5 p-2 bg-background hover:bg-muted border border-border rounded-lg text-left text-[10px] font-medium transition-colors text-muted-foreground cursor-pointer active:scale-95"
               >
                 {preset.icon}
                 <span className="truncate">{preset.label}</span>
@@ -190,15 +200,15 @@ export function ChatPanel({ components, connections, onClose }: ChatPanelProps) 
               }
             }}
             placeholder="Ask about your architecture..."
-            className="min-h-[40px] max-h-20 py-2 px-3 resize-none bg-background border-border text-[11px] rounded-xl focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+            className="min-h-10 max-h-20 py-2 px-3 resize-none bg-background border-border text-[11px] rounded-xl focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
           />
           <Button
-            size="icon"
+            size="icon-sm"
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
-            className="absolute right-2 bottom-2 h-6 w-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-md"
+            className="absolute right-2 bottom-2 h-7 w-7 rounded-lg shadow-md"
           >
-            <Send className="w-3 h-3" />
+            <FiSend className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>

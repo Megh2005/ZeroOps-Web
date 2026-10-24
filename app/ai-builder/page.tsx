@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Sparkles, 
   Layers, 
   Send, 
   RefreshCw, 
@@ -13,8 +12,11 @@ import {
   Loader2, 
   Trash2, 
   Coins, 
-  Code
+  Code,
+  Cpu
 } from "lucide-react"
+import { useTheme } from "next-themes"
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles"
 import { toast } from "sonner"
 import { Canvas } from "@/components/canvas"
 import { ConfigPanel } from "@/components/config-panel"
@@ -48,6 +50,14 @@ export default function AiBuilderPage() {
 
 function AiBuilderContent() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff"
   
   // Canvas States
   const [components, setComponents] = useState<CanvasComponent[]>([])
@@ -259,10 +269,15 @@ function AiBuilderContent() {
   const totalCost = components.reduce((sum, c) => sum + (c.cost || 0), 0)
 
   return (
-    <div className="flex h-screen w-screen bg-[#070708] text-zinc-200 overflow-hidden font-sans select-none">
+    <div className="flex h-screen w-screen bg-[#070708] text-zinc-200 overflow-hidden font-sans select-none relative">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
       
       {/* Left Chat Workspace (w-[450px]) */}
-      <div className="w-[450px] border-r border-zinc-800/80 bg-[#09090b] flex flex-col h-full shadow-2xl relative z-10">
+      <div className="w-[450px] border-r border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md flex flex-col h-full shadow-2xl relative z-10">
         
         {/* Workspace Header */}
         <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/40">
@@ -275,7 +290,7 @@ function AiBuilderContent() {
             </button>
             <div>
               <h2 className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-purple-400" /> AI Architect
+                <Cpu className="w-4 h-4 text-purple-400" /> AI Architect
               </h2>
               <span className="text-[10px] text-zinc-500 font-mono">PROMPT-TO-BUILDER</span>
             </div>
@@ -361,13 +376,14 @@ function AiBuilderContent() {
               rows={2}
               className="flex-1 px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl font-sans text-xs text-zinc-200 placeholder-zinc-650 focus:outline-none focus:border-purple-600 transition-colors resize-none leading-relaxed"
             />
-            <button
+            <Button
+              size="icon"
               onClick={() => handleSendMessage(inputValue)}
               disabled={isLoading || !inputValue.trim()}
-              className="w-10 h-10 rounded-xl bg-purple-650 hover:bg-purple-600 disabled:opacity-40 disabled:hover:bg-purple-650 text-zinc-50 flex items-center justify-center transition-all shrink-0 shadow-lg shadow-purple-600/10"
+              className="w-10 h-10 rounded-xl shrink-0"
             >
               <Send className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Action Trigger Buttons */}
@@ -377,17 +393,17 @@ function AiBuilderContent() {
                 variant="outline"
                 size="sm"
                 onClick={handleOpenInBuilder}
-                className="flex-1 bg-zinc-900 border-zinc-800 text-zinc-350 hover:bg-zinc-850 font-mono text-[10px] h-9 gap-1.5 hover:text-zinc-150"
+                className="flex-1 font-mono text-xs gap-1.5"
               >
-                <Layers className="w-3.5 h-3.5 text-purple-400" /> Open in Workspace
+                <Layers className="w-3.5 h-3.5 text-blue-400" /> Open in Workspace
               </Button>
               <Button
                 variant="default"
                 size="sm"
                 onClick={handleViewTerraform}
-                className="flex-1 bg-purple-650 hover:bg-purple-600 text-zinc-50 font-mono text-[10px] h-9 gap-1.5"
+                className="flex-1 font-mono text-xs gap-1.5"
               >
-                <Code className="w-3.5 h-3.5 text-zinc-100" /> View Terraform HCL
+                <Code className="w-3.5 h-3.5" /> View Terraform HCL
               </Button>
             </div>
           )}

@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Sidebar } from "@/components/sidebar"
 import { Canvas } from "@/components/canvas"
 import { Toolbar } from "@/components/toolbar"
@@ -164,58 +163,56 @@ export function ArchitectureBuilder() {
   }, [])
 
   return (
-    <ThemeProvider>
-      <div className="h-screen flex flex-col overflow-hidden bg-background">
-        <Toolbar
-          onValidate={handleValidate}
-          onGenerateTerraform={handleGenerateTerraform}
-          onClearCanvas={handleClearCanvas}
-          onResetExample={handleResetExample}
-          totalCost={totalCost}
-          componentCount={components.length}
-          showChat={showChat}
-          onToggleChat={handleToggleChat}
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <Toolbar
+        onValidate={handleValidate}
+        onGenerateTerraform={handleGenerateTerraform}
+        onClearCanvas={handleClearCanvas}
+        onResetExample={handleResetExample}
+        totalCost={totalCost}
+        componentCount={components.length}
+        showChat={showChat}
+        onToggleChat={handleToggleChat}
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar onAddComponent={handleAddComponent} />
+        <Canvas
+          components={components}
+          connections={connections}
+          selectedComponent={selectedComponent}
+          onSelectComponent={handleSelectComponent}
+          onUpdateComponent={handleUpdateComponent}
+          onDeleteComponent={handleDeleteComponent}
+          onAddComponent={handleAddComponent}
+          onDeleteConnection={handleDeleteConnection}
+          onCreateConnection={handleCreateConnection}
         />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar onAddComponent={handleAddComponent} />
-          <Canvas
-            components={components}
-            connections={connections}
-            selectedComponent={selectedComponent}
-            onSelectComponent={handleSelectComponent}
-            onUpdateComponent={handleUpdateComponent}
-            onDeleteComponent={handleDeleteComponent}
-            onAddComponent={handleAddComponent}
-            onDeleteConnection={handleDeleteConnection}
-            onCreateConnection={handleCreateConnection}
-          />
-          <AnimatePresence>
-            {selectedComponent && (
-              <ConfigPanel
-                component={selectedComponent}
-                onUpdate={(updates) => handleUpdateComponent(selectedComponent.id, updates)}
-                onClose={() => setSelectedComponent(null)}
-                onDelete={() => handleDeleteComponent(selectedComponent.id)}
-              />
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showChat && (
-              <ChatPanel
-                components={components}
-                connections={connections}
-                onClose={() => setShowChat(false)}
-              />
-            )}
-          </AnimatePresence>
-        </div>
-
         <AnimatePresence>
-          {showValidation && validationResult && (
-            <ValidationModal result={validationResult} onClose={() => setShowValidation(false)} />
+          {selectedComponent && (
+            <ConfigPanel
+              component={selectedComponent}
+              onUpdate={(updates) => handleUpdateComponent(selectedComponent.id, updates)}
+              onClose={() => setSelectedComponent(null)}
+              onDelete={() => handleDeleteComponent(selectedComponent.id)}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showChat && (
+            <ChatPanel
+              components={components}
+              connections={connections}
+              onClose={() => setShowChat(false)}
+            />
           )}
         </AnimatePresence>
       </div>
-    </ThemeProvider>
+
+      <AnimatePresence>
+        {showValidation && validationResult && (
+          <ValidationModal result={validationResult} onClose={() => setShowValidation(false)} />
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

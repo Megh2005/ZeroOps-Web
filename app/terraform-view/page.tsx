@@ -3,12 +3,29 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Copy, Download, X, Sparkles, AlertTriangle, Loader2, ArrowLeft, Github, Cloud, Terminal, ExternalLink, ShieldCheck } from "lucide-react"
+import {
+  FiCheck,
+  FiCopy,
+  FiDownload,
+  FiX,
+  FiCpu,
+  FiAlertTriangle,
+  FiLoader,
+  FiArrowLeft,
+  FiCloud,
+  FiTerminal,
+  FiExternalLink,
+  FiShield,
+  FiLayers,
+} from "react-icons/fi"
+import { FaGithub } from "react-icons/fa6"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { validateTerraform, optimizeTerraform } from "@/lib/gemini"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import { useAuth } from "@/components/auth-provider"
+import { useTheme } from "next-themes"
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles"
 import { useRef } from "react"
 import { SandboxConsole } from "@/components/sandbox-console"
 
@@ -80,6 +97,8 @@ export default function TerraformViewPage() {
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [optimizationTips, setOptimizationTips] = useState<string>("")
   const [isMounted, setIsMounted] = useState(false)
+  const { resolvedTheme } = useTheme()
+  const particleColor = isMounted && resolvedTheme === "light" ? "#000000" : "#ffffff"
 
   // Optimization checklist state
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([
@@ -408,7 +427,13 @@ export default function TerraformViewPage() {
   if (!isMounted) return null // Prevent hydration errors
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans relative overflow-hidden pb-24">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50 p-6 flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
@@ -422,27 +447,27 @@ export default function TerraformViewPage() {
                 router.push("/builder")
               }
             }}
-            className="gap-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 w-full md:w-auto"
+            className="gap-2 text-zinc-400 hover:text-zinc-100 w-full md:w-auto"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <FiArrowLeft className="w-4 h-4" />
             Back to Builder
           </Button>
           <div className="w-px h-8 bg-zinc-800 mx-2 hidden md:block" />
           <div className="text-center md:text-left">
             <h1 className="text-2xl font-bold text-zinc-100 flex items-center justify-center md:justify-start gap-2">
-              <Sparkles className="w-6 h-6 text-blue-400" /> Generated Terraform
+              <FiCpu className="w-6 h-6 text-blue-400" /> Generated Terraform
             </h1>
             <p className="text-sm text-zinc-400 mt-1">Infrastructure as Code View</p>
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center justify-center gap-3 w-full lg:w-auto">
-          <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2 bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-300">
-            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 w-full lg:w-auto">
+          <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2">
+            {copied ? <FiCheck className="w-4 h-4 text-emerald-500" /> : <FiCopy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy"}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-300">
-            <Download className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+            <FiDownload className="w-4 h-4" />
             Download
           </Button>
           <Button
@@ -450,9 +475,9 @@ export default function TerraformViewPage() {
             size="sm"
             onClick={handleValidate}
             disabled={isValidating || !code}
-            className="gap-2 bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-300"
+            className="gap-2"
           >
-            {isValidating ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> : <Check className="w-4 h-4 text-blue-400" />}
+            {isValidating ? <FiLoader className="w-4 h-4 animate-spin text-blue-400" /> : <FiCheck className="w-4 h-4 text-blue-400" />}
             Check Now
           </Button>
           <Button
@@ -460,9 +485,9 @@ export default function TerraformViewPage() {
             size="sm"
             onClick={() => setIsSandboxOpen(true)}
             disabled={!code}
-            className="gap-2 bg-zinc-900 hover:bg-zinc-800 border-purple-900/30 text-purple-300 font-semibold"
+            className="gap-2 text-purple-300 font-semibold"
           >
-            <Terminal className="w-4 h-4 text-purple-450" />
+            <FiTerminal className="w-4 h-4 text-purple-400" />
             Sandbox Check
           </Button>
           <Button
@@ -470,18 +495,18 @@ export default function TerraformViewPage() {
             size="sm"
             onClick={handleOptimize}
             disabled={isOptimizing || !code}
-            className="gap-2 bg-zinc-100 hover:bg-white text-zinc-900 font-semibold border-0 shadow-lg shadow-white/10"
+            className="gap-2 font-semibold"
           >
-            {isOptimizing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Optimize for Cost"}
+            {isOptimizing ? <FiLoader className="w-4 h-4 animate-spin" /> : "Optimize for Cost"}
           </Button>
           <Button
             variant="default"
             size="sm"
             onClick={() => setIsDeployModalOpen(true)}
             disabled={!code}
-            className="gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold border-0 shadow-lg shadow-blue-500/20"
+            className="gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold"
           >
-            <Cloud className="w-4 h-4" />
+            <FiCloud className="w-4 h-4" />
             Deploy to Google Cloud
           </Button>
         </div>
@@ -493,7 +518,7 @@ export default function TerraformViewPage() {
         {/* Cost Optimization Settings Card */}
         <div className="p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl shadow-xl space-y-4">
           <div className="flex items-center gap-2 border-b border-zinc-800/50 pb-3">
-            <Sparkles className="w-5 h-5 text-emerald-400" />
+            <FiLayers className="w-5 h-5 text-emerald-400" />
             <h4 className="text-sm font-mono text-zinc-300 font-bold">
               Cost Optimization Settings (Multi-Select)
             </h4>
@@ -581,7 +606,7 @@ export default function TerraformViewPage() {
               className={`p-6 rounded-2xl border shadow-xl ${validationStatus.startsWith("✅") ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300 shadow-emerald-500/5" : "bg-amber-500/10 border-amber-500/20 text-amber-300 shadow-amber-500/5"}`}
             >
               <h3 className="font-semibold mb-3 uppercase tracking-widest text-xs opacity-80 flex items-center gap-2">
-                {validationStatus.startsWith("✅") ? <Check className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                {validationStatus.startsWith("✅") ? <FiCheck className="w-4 h-4" /> : <FiAlertTriangle className="w-4 h-4" />}
                 Validation Result
               </h3>
               <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{validationStatus}</div>
@@ -673,7 +698,7 @@ export default function TerraformViewPage() {
         {code && (
           <div className="p-8 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl shadow-xl space-y-4">
             <h4 className="text-sm font-mono text-zinc-300 font-bold flex items-center gap-2">
-              <Github className="w-5 h-5 text-blue-400" />
+              <FaGithub className="w-5 h-5 text-blue-400" />
               Push Code Directly to GitHub
             </h4>
             
@@ -795,18 +820,19 @@ export default function TerraformViewPage() {
 
             <div className="flex justify-end pt-2">
               <Button
+                size="sm"
                 onClick={handlePushToGithub}
                 disabled={isPushing || !selectedRepoId || !pushBranch.trim() || !targetFilePath.trim()}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs h-9 px-4 flex items-center gap-1.5 rounded-lg transition-all"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs gap-1.5"
               >
                 {isPushing ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <FiLoader className="w-3.5 h-3.5 animate-spin" />
                     Pushing...
                   </>
                 ) : (
                   <>
-                    <Github className="w-3.5 h-3.5" />
+                    <FaGithub className="w-3.5 h-3.5" />
                     Push File directly to GitHub
                   </>
                 )}
@@ -828,8 +854,8 @@ export default function TerraformViewPage() {
                 {/* Modal Header */}
                 <div className="p-6 border-b border-zinc-800/80 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                      <Cloud className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                      <FiCloud className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="font-bold text-zinc-100">Deploy Infrastructure to Google Cloud</h3>
@@ -844,9 +870,9 @@ export default function TerraformViewPage() {
                       }
                     }}
                     disabled={deploying}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50 cursor-pointer active:scale-95"
                   >
-                    <X className="w-4 h-4" />
+                    <FiX className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -854,7 +880,7 @@ export default function TerraformViewPage() {
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   {!profile?.gcpLinkedEmail ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-                      <AlertTriangle className="w-10 h-10 text-amber-500" />
+                      <FiAlertTriangle className="w-10 h-10 text-amber-500" />
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-zinc-300">Google Cloud Account is not connected</p>
                         <p className="text-xs text-zinc-500 max-w-sm">
@@ -862,11 +888,12 @@ export default function TerraformViewPage() {
                         </p>
                       </div>
                       <Button
+                        size="sm"
                         onClick={() => {
                           setIsDeployModalOpen(false)
                           router.push("/profile")
                         }}
-                        className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs h-9 px-4 rounded-xl transition-all"
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs"
                       >
                         Go to Profile Dashboard
                       </Button>
@@ -876,7 +903,7 @@ export default function TerraformViewPage() {
                       {deploymentLogs.length === 0 && (
                         <div className="space-y-4">
                           <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
-                            <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
+                            <FiShield className="w-5 h-5 text-blue-400 shrink-0" />
                             <p className="text-xs text-zinc-300 leading-relaxed font-mono">
                               Connected as: <span className="text-white font-bold">{profile.gcpLinkedEmail}</span>
                             </p>
@@ -888,7 +915,7 @@ export default function TerraformViewPage() {
                             </label>
                             {fetchingProjects ? (
                               <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 py-2">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                                <FiLoader className="w-3.5 h-3.5 animate-spin text-blue-400" />
                                 Retrieving cloud projects list...
                               </div>
                             ) : gcpErrorMsg ? (
@@ -896,6 +923,7 @@ export default function TerraformViewPage() {
                                 <p className="text-xs font-mono leading-relaxed">{gcpErrorMsg}</p>
                                 <Button
                                   variant="outline"
+                                  size="sm"
                                   onClick={fetchGcpProjects}
                                   className="border-rose-950 bg-transparent hover:bg-rose-900/10 text-rose-300 text-[10px] h-7 px-2.5 rounded-lg transition-colors font-mono"
                                 >
@@ -926,7 +954,7 @@ export default function TerraformViewPage() {
                             <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-850 space-y-3 font-mono">
                               {fetchingDeployments ? (
                                 <div className="text-[10px] text-zinc-500 flex items-center gap-2">
-                                  <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+                                  <FiLoader className="w-3 h-3 animate-spin text-blue-400" />
                                   Checking active deployments status...
                                 </div>
                               ) : projectDeployments.length > 0 ? (
@@ -987,7 +1015,7 @@ export default function TerraformViewPage() {
                           className="p-5 bg-emerald-950/20 border border-emerald-500/30 rounded-xl space-y-4 font-mono shadow-lg shadow-emerald-500/5"
                         >
                           <div className="flex items-center gap-2.5 text-emerald-400">
-                            <ShieldCheck className="w-5 h-5" />
+                            <FiShield className="w-5 h-5" />
                             <h4 className="font-bold text-xs uppercase tracking-wider">Deployment Verified Successfully</h4>
                           </div>
                           
@@ -1010,7 +1038,7 @@ export default function TerraformViewPage() {
                           {/* Terminal Header */}
                           <div className="bg-zinc-900/80 px-4 py-2 border-b border-zinc-850 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Terminal className="w-4 h-4 text-zinc-500" />
+                              <FiTerminal className="w-4 h-4 text-zinc-500" />
                               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
                                 Terraform Build stdout
                               </span>
@@ -1056,29 +1084,30 @@ export default function TerraformViewPage() {
                         <>
                           <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => setIsDeployModalOpen(false)}
-                            className="border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs h-9 px-4 rounded-xl"
                           >
                             Cancel
                           </Button>
                           <Button
+                            size="sm"
                             onClick={handleDeployToGcp}
                             disabled={deploying || !selectedProjectId}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-500/10"
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs gap-1.5"
                           >
                             {deploying ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <FiLoader className="w-3.5 h-3.5 animate-spin" />
                                 Running Terraform...
                               </>
                             ) : projectDeployments.length > 0 ? (
                               <>
-                                <Cloud className="w-3.5 h-3.5" />
+                                <FiCloud className="w-3.5 h-3.5" />
                                 Deploy New Version (v{projectDeployments[0].version + 1})
                               </>
                             ) : (
                               <>
-                                <Cloud className="w-3.5 h-3.5" />
+                                <FiCloud className="w-3.5 h-3.5" />
                                 Confirm & Start Deploy
                               </>
                             )}
@@ -1086,12 +1115,13 @@ export default function TerraformViewPage() {
                         </>
                       ) : (
                         <Button
+                          size="sm"
                           onClick={() => {
                             setIsDeployModalOpen(false)
                             setDeploymentLogs([])
                           }}
                           disabled={deploying}
-                          className="bg-zinc-100 hover:bg-white text-zinc-900 font-semibold text-xs h-9 px-4 rounded-xl"
+                          className="font-semibold text-xs"
                         >
                           Close Console
                         </Button>
@@ -1114,7 +1144,7 @@ export default function TerraformViewPage() {
             >
               <div className="flex items-center gap-4 mb-8 border-b border-zinc-800/50 pb-6">
                 <div className="p-3 bg-emerald-500/10 rounded-xl">
-                  <Sparkles className="w-6 h-6 text-emerald-400" />
+                  <FiLayers className="w-6 h-6 text-emerald-400" />
                 </div>
                 <h4 className="font-semibold text-2xl text-emerald-400 tracking-wide">
                   Cost Savings & Optimization
