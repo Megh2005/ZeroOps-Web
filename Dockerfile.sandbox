@@ -1,0 +1,17 @@
+FROM alpine:3.19
+
+# Install required tools
+RUN apk add --no-cache bash curl git wget unzip ca-certificates
+
+# Install Terraform (default 1.7.0, configurable via ARG)
+ARG TERRAFORM_VERSION=1.7.0
+RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+    && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+    && mv terraform /usr/local/bin/ \
+    && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+# Create and define /workspace directory
+WORKDIR /workspace
+
+# Keep container running indefinitely
+CMD ["tail", "-f", "/dev/null"]
