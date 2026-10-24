@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
+import { exportArchitectureAuditPdf } from "@/lib/pdf-export";
 
 const CLOUD_OPTIONS = ["AWS", "GCP", "Digital Ocean"];
 
@@ -95,15 +96,47 @@ export default function DevOpsPage() {
   const terraformPrintRef = useRef<HTMLDivElement>(null);
   const archPrintRef = useRef<HTMLDivElement>(null);
 
-  const handlePrintTerraform = useReactToPrint({
-    contentRef: terraformPrintRef,
-    documentTitle: "Terraform-Migration-Report",
-  });
+  const handleExportTopologyPdf = () => {
+    if (!archOutput) {
+      toast.error("No architecture topology generated to export.");
+      return;
+    }
+    toast.info("Generating formal audit PDF report...");
+    try {
+      exportArchitectureAuditPdf({
+        title: "Google Cloud Platform Topology Specification",
+        subtitle: "Enterprise Infrastructure Architecture Audit",
+        content: archOutput,
+        category: "Cloud Topology Blueprint",
+        filename: "ZeroOps_Topology_Architect_Audit_Report",
+      });
+      toast.success("Audit report exported in A4 monospace format!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Failed to generate PDF audit report.");
+    }
+  };
 
-  const handlePrintArchitecture = useReactToPrint({
-    contentRef: archPrintRef,
-    documentTitle: "Architecture-Design-Report",
-  });
+  const handleExportMigrationPdf = () => {
+    if (!terraformOutput) {
+      toast.error("No migration plan generated to export.");
+      return;
+    }
+    toast.info("Generating formal migration audit PDF...");
+    try {
+      exportArchitectureAuditPdf({
+        title: `Terraform Migration Plan (${fromCloud} to ${toCloud})`,
+        subtitle: "Multi-Cloud Infrastructure Migration Audit",
+        content: `### Source Cloud: ${fromCloud}\n### Target Cloud: ${toCloud}\n\n## Translated Terraform HCL\n\`\`\`terraform\n${terraformOutput}\n\`\`\``,
+        category: "Cloud Migration Specification",
+        filename: `ZeroOps_Migration_${fromCloud}_to_${toCloud}_Audit_Report`,
+      });
+      toast.success("Migration audit PDF exported successfully!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Failed to generate migration PDF.");
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -515,13 +548,13 @@ resource "google_compute_instance" "vm" {
                             </Button>
                           )}
                           <Button
-                            onClick={handlePrintTerraform}
+                            onClick={handleExportMigrationPdf}
                             variant="outline"
                             size="sm"
-                            className="text-xs font-mono"
+                            className="text-xs font-mono gap-1.5"
                           >
-                            <FiPrinter className="w-3.5 h-3.5 mr-2" />
-                            Print Plan Report
+                            <FiDownload className="w-3.5 h-3.5" />
+                            Export Audit PDF
                           </Button>
                         </div>
                       </div>
@@ -744,13 +777,13 @@ resource "google_compute_instance" "vm" {
                           <FiCpu className="w-5 h-5" /> Recommendation
                         </div>
                         <Button
-                          onClick={handlePrintArchitecture}
+                          onClick={handleExportTopologyPdf}
                           variant="outline"
                           size="sm"
-                          className="text-xs font-mono"
+                          className="text-xs font-mono gap-1.5"
                         >
-                          <FiPrinter className="w-3.5 h-3.5 mr-2" />
-                          Print / Export PDF
+                          <FiDownload className="w-3.5 h-3.5" />
+                          Export Audit PDF
                         </Button>
                       </div>
                       <div className="text-zinc-300 text-sm font-mono leading-relaxed">

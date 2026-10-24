@@ -13,7 +13,8 @@ import {
   FiTrash2, 
   FiDollarSign, 
   FiCode,
-  FiCpu
+  FiCpu,
+  FiDownload,
 } from "react-icons/fi"
 import { useTheme } from "next-themes"
 import { Floating3DParticles } from "@/components/ui/floating-3d-particles"
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import type { CanvasComponent, Connection } from "@/types/architecture"
 import { AuthGuard } from "@/components/auth-guard"
 import { calculateClosestAnchors } from "@/lib/utils"
+import { exportArchitectureAuditPdf } from "@/lib/pdf-export"
 
 interface ChatMessage {
   id: string
@@ -266,6 +268,71 @@ function AiBuilderContent() {
     router.push("/terraform-view")
   }
 
+  const handleExportAuditPdf = () => {
+    if (components.length === 0) {
+      toast.error("No components on the canvas to audit.")
+      return
+    }
+
+    toast.info("Generating formal architecture audit PDF...")
+
+    const code = generateTerraform(components, connections)
+    const resourceTable = components.map((c, i) => 
+      `| ${i + 1} | ${c.name} | ${c.category.toUpperCase()} | ${c.type} | $${(c.cost || 0).toFixed(2)}/mo |`
+    ).join("\n")
+
+    const connList = connections.length > 0 
+      ? connections.map((c, i) => {
+          const from = components.find(comp => comp.id === c.from)?.name || c.from
+          const to = components.find(comp => comp.id === c.to)?.name || c.to
+          return `[${i + 1}] ${from} -> ${to} (Routing: ${c.fromAnchor} to ${c.toAnchor})`
+        }).join("\n")
+      : "Isolated / Zero dependencies defined."
+
+    const auditMarkdown = `
+# ZeroOps Architecture Audit Specification
+
+## Executive Summary
+This document provides an audit-compliant specification of the cloud infrastructure topology synthesized by ZeroOps AI Architect. It includes component inventory, connectivity ledger, estimated monthly operational expenditure, and the synthesized Terraform HCL deployment blueprint.
+
+## Topology Metadata
+- Total Resources: ${components.length} cloud nodes
+- Active Connections: ${connections.length} network paths
+- Estimated Operating Cost: $${totalCost.toFixed(2)} USD / month
+- Target Cloud Provider: Google Cloud Platform (GCP)
+- Audit Standard: ISO/IEC 27001 & CIS Benchmarks Architecture Baseline
+
+## Bill of Materials (Resource Inventory)
+| # | Component Label | Category | GCP Resource Type | Est. Cost |
+|---|---|---|---|---|
+${resourceTable}
+
+## Network Interconnect Matrix
+\`\`\`text
+${connList}
+\`\`\`
+
+## Synthesized Infrastructure as Code (Terraform HCL)
+\`\`\`terraform
+${code}
+\`\`\`
+`
+
+    try {
+      exportArchitectureAuditPdf({
+        title: "AI Architect Topology Audit Report",
+        subtitle: "Verified GCP Cloud Infrastructure Blueprint",
+        content: auditMarkdown,
+        category: "Cloud Topology Specification",
+        filename: "ZeroOps_AI_Topology_Audit_Report",
+      })
+      toast.success("Audit PDF report generated and downloaded successfully!")
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Failed to generate audit PDF.")
+    }
+  }
+
   const totalCost = components.reduce((sum, c) => sum + (c.cost || 0), 0)
 
   return (
@@ -388,22 +455,32 @@ function AiBuilderContent() {
 
           {/* Action Trigger Buttons */}
           {components.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenInBuilder}
+                  className="flex-1 font-mono text-xs gap-1.5"
+                >
+                  <FiLayers className="w-3.5 h-3.5 text-blue-400" /> Open in Workspace
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleViewTerraform}
+                  className="flex-1 font-mono text-xs gap-1.5"
+                >
+                  <FiCode className="w-3.5 h-3.5" /> View Terraform HCL
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenInBuilder}
-                className="flex-1 font-mono text-xs gap-1.5"
+                onClick={handleExportAuditPdf}
+                className="w-full font-mono text-xs gap-1.5 bg-zinc-900/60 hover:bg-zinc-900 border-zinc-800 text-zinc-300"
               >
-                <FiLayers className="w-3.5 h-3.5 text-blue-400" /> Open in Workspace
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleViewTerraform}
-                className="flex-1 font-mono text-xs gap-1.5"
-              >
-                <FiCode className="w-3.5 h-3.5" /> View Terraform HCL
+                <FiDownload className="w-3.5 h-3.5 text-emerald-400" /> Export Audit PDF (A4 Monospace)
               </Button>
             </div>
           )}

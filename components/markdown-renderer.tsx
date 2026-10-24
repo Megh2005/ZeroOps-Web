@@ -2,7 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { Download } from "lucide-react";
+import { FiDownload } from "react-icons/fi";
 
 interface MarkdownRendererProps {
   content: string;
@@ -173,7 +173,7 @@ export function MarkdownRenderer({ content, isPrint = false }: MarkdownRendererP
                   className="p-1 hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-white"
                   title="Download as PNG"
                 >
-                  <Download className="w-4 h-4" />
+                  <FiDownload className="w-4 h-4" />
                 </button>
               </div>
               <div className="absolute -inset-0.5 bg-linear-to-r from-blue-500/10 to-purple-500/10 blur opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none" />
