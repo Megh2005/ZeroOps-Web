@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
-import { SiteHeader } from "@/components/site-header";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -29,7 +30,7 @@ import {
   FolderGit2,
   Tag,
   AlertCircle,
-  Sparkles
+  Cpu,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -82,7 +83,15 @@ const LANGUAGE_COLOR_MAP: Record<string, string> = {
 
 export default function ProfilePage() {
   const { user, profile: dbProfile, loading } = useAuth();
-  
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
+
   const profile = dbProfile || {
     displayName: user?.displayName || "GitHub Developer",
     name: user?.displayName || "GitHub Developer",
@@ -120,7 +129,9 @@ export default function ProfilePage() {
       url.searchParams.delete("gcp_success");
       window.history.replaceState({}, document.title, url.toString());
     } else if (gcpError) {
-      toast.error(`Failed to link Google Cloud: ${decodeURIComponent(gcpError)}`);
+      toast.error(
+        `Failed to link Google Cloud: ${decodeURIComponent(gcpError)}`,
+      );
       url.searchParams.delete("gcp_error");
       window.history.replaceState({}, document.title, url.toString());
     }
@@ -133,10 +144,14 @@ export default function ProfilePage() {
       const res = await fetch("/api/gcp/disconnect", { method: "POST" });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success("Google Cloud successfully disconnected!", { id: toastId });
+        toast.success("Google Cloud successfully disconnected!", {
+          id: toastId,
+        });
         window.location.reload();
       } else {
-        toast.error(data.error || "Failed to disconnect Google Cloud.", { id: toastId });
+        toast.error(data.error || "Failed to disconnect Google Cloud.", {
+          id: toastId,
+        });
       }
     } catch (err: any) {
       console.error(err);
@@ -148,7 +163,9 @@ export default function ProfilePage() {
 
   const handleSyncRepos = async () => {
     setSyncing(true);
-    const toastId = toast.loading("Synchronizing latest repositories from GitHub...");
+    const toastId = toast.loading(
+      "Synchronizing latest repositories from GitHub...",
+    );
     try {
       const res = await fetch("/api/user/sync-repos", {
         method: "POST",
@@ -156,13 +173,19 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.success) {
         setRepositories(data.repositories);
-        toast.success("GitHub repository register updated successfully!", { id: toastId });
+        toast.success("GitHub repository register updated successfully!", {
+          id: toastId,
+        });
       } else {
-        toast.error(data.error || "Failed to sync repositories.", { id: toastId });
+        toast.error(data.error || "Failed to sync repositories.", {
+          id: toastId,
+        });
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred while syncing repositories.", { id: toastId });
+      toast.error("An error occurred while syncing repositories.", {
+        id: toastId,
+      });
     } finally {
       setSyncing(false);
     }
@@ -181,15 +204,17 @@ export default function ProfilePage() {
 
   // Extract unique languages present in repos
   const uniqueLanguages = Array.from(
-    new Set(repositories.map((r) => r.language).filter(Boolean))
+    new Set(repositories.map((r) => r.language).filter(Boolean)),
   ) as string[];
 
   // Filter repos based on search and language dropdown
   const filteredRepos = repositories.filter((repo) => {
     const matchesSearch =
       repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesLanguage = selectedLanguage === "all" || repo.language === selectedLanguage;
+      (repo.description &&
+        repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesLanguage =
+      selectedLanguage === "all" || repo.language === selectedLanguage;
     return matchesSearch && matchesLanguage;
   });
 
@@ -219,10 +244,14 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-blue-500/30 pb-20">
-      <SiteHeader />
+    <div className="min-h-screen bg-transparent text-zinc-100 selection:bg-blue-500/30 pb-20 relative overflow-hidden">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
 
-      <main className="relative z-10 max-w-[80vw] mx-auto pt-28 px-6">
+      <main className="relative z-10 max-w-[80vw] mx-auto pt-10 pb-32 px-6">
         {/* Header Title */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -231,7 +260,7 @@ export default function ProfilePage() {
           className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-6"
         >
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold  text-white flex items-center gap-3">
               <FolderGit2 className="w-8 h-8 text-blue-500" />
               Developer Profile
             </h1>
@@ -243,9 +272,12 @@ export default function ProfilePage() {
             onClick={handleSyncRepos}
             disabled={syncing}
             variant="outline"
-            className="border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 hover:text-white text-zinc-300 font-mono text-xs h-10 px-4 flex items-center gap-2 rounded-xl backdrop-blur-md transition-all shrink-0 self-start md:self-auto"
+            size="default"
+            className="font-mono text-xs gap-2 shrink-0 self-start md:self-auto"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`}
+            />
             Sync GitHub Repos
           </Button>
         </motion.div>
@@ -255,7 +287,9 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab("profile")}
             className={`pb-2 px-1 text-sm font-semibold transition-all relative ${
-              activeTab === "profile" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "profile"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Profile Overview
@@ -269,7 +303,9 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab("repositories")}
             className={`pb-2 px-1 text-sm font-semibold transition-all relative flex items-center gap-2 ${
-              activeTab === "repositories" ? "text-blue-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === "repositories"
+                ? "text-blue-400 font-bold"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Repositories
@@ -318,7 +354,9 @@ export default function ProfilePage() {
                         <Avatar className="h-20 w-20 border-2 border-blue-500/40 p-1 bg-zinc-950 shadow-inner rounded-full">
                           <AvatarImage
                             src={profile.photoURL || user.photoURL || ""}
-                            alt={profile.displayName || user.displayName || "User"}
+                            alt={
+                              profile.displayName || user.displayName || "User"
+                            }
                             className="rounded-full object-cover"
                           />
                           <AvatarFallback className="bg-zinc-900 text-zinc-300 text-xl font-bold font-mono">
@@ -329,8 +367,10 @@ export default function ProfilePage() {
                         </Avatar>
                       </div>
                       <div className="space-y-1 text-center sm:text-left">
-                        <h2 className="text-xl font-bold text-white tracking-tight">
-                          {profile.name || user.displayName || "GitHub Developer"}
+                        <h2 className="text-xl font-bold text-white ">
+                          {profile.name ||
+                            user.displayName ||
+                            "GitHub Developer"}
                         </h2>
                         <p className="text-zinc-500 text-xs font-mono flex items-center justify-center sm:justify-start gap-1">
                           <Github className="w-3.5 h-3.5 inline text-zinc-400" />
@@ -377,11 +417,14 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-2 text-xs font-mono text-zinc-300">
                             <Calendar className="w-3.5 h-3.5 text-zinc-600" />
                             {profile.createdAt
-                              ? new Date(profile.createdAt).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })
+                              ? new Date(profile.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )
                               : "Synchronizing..."}
                           </div>
                         </div>
@@ -417,7 +460,9 @@ export default function ProfilePage() {
                             Workspace Purpose
                           </h4>
                           <p className="text-sm font-semibold text-white mt-0.5">
-                            {USE_CASE_MAP[profile.useCase] || profile.useCase || "Personal Development"}
+                            {USE_CASE_MAP[profile.useCase] ||
+                              profile.useCase ||
+                              "Personal Development"}
                           </p>
                         </div>
                       </div>
@@ -431,7 +476,9 @@ export default function ProfilePage() {
                             Collaborator scale
                           </h4>
                           <p className="text-sm font-semibold text-white mt-0.5">
-                            {TEAM_SIZE_MAP[profile.teamSize] || profile.teamSize || "Solo Development"}
+                            {TEAM_SIZE_MAP[profile.teamSize] ||
+                              profile.teamSize ||
+                              "Solo Development"}
                           </p>
                         </div>
                       </div>
@@ -487,7 +534,10 @@ export default function ProfilePage() {
 
                       <div className="space-y-4">
                         <p className="text-zinc-400 text-sm leading-relaxed">
-                          Link your Google Cloud Platform account to enable direct Terraform deployments. Once connected, you can apply your visual canvas configurations into active GCP cloud environments with a single click.
+                          Link your Google Cloud Platform account to enable
+                          direct Terraform deployments. Once connected, you can
+                          apply your visual canvas configurations into active
+                          GCP cloud environments with a single click.
                         </p>
 
                         {dbProfile?.gcpLinkedEmail ? (
@@ -497,15 +547,20 @@ export default function ProfilePage() {
                                 G
                               </div>
                               <div>
-                                <h5 className="text-xs text-zinc-400 font-mono">Linked Google Account</h5>
-                                <p className="text-sm font-semibold text-white">{dbProfile.gcpLinkedEmail}</p>
+                                <h5 className="text-xs text-zinc-400 font-mono">
+                                  Linked Google Account
+                                </h5>
+                                <p className="text-sm font-semibold text-white">
+                                  {dbProfile.gcpLinkedEmail}
+                                </p>
                               </div>
                             </div>
                             <Button
                               onClick={handleDisconnectGcp}
                               disabled={disconnecting}
-                              variant="outline"
-                              className="border-zinc-800 bg-transparent hover:bg-rose-950/20 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 font-mono text-xs h-9 px-3 rounded-xl transition-all"
+                              variant="destructive"
+                              size="sm"
+                              className="font-mono text-xs"
                             >
                               Disconnect Google Cloud
                             </Button>
@@ -513,7 +568,8 @@ export default function ProfilePage() {
                         ) : (
                           <Button
                             asChild
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs h-10 px-5 rounded-xl transition-all"
+                            size="default"
+                            className="font-semibold text-xs"
                           >
                             <Link href="/api/auth/gcp">
                               Connect Google Cloud Account
@@ -529,22 +585,48 @@ export default function ProfilePage() {
                         Required Google Cloud APIs
                       </h4>
                       <p className="text-xs text-zinc-500">
-                        Please ensure the following APIs are enabled in your Google Cloud Console for the target project:
+                        Please ensure the following APIs are enabled in your
+                        Google Cloud Console for the target project:
                       </p>
                       <ul className="space-y-2.5 font-mono text-[11px]">
                         {[
-                          { name: "Cloud Resource Manager API", id: "cloudresourcemanager.googleapis.com" },
-                          { name: "Compute Engine API", id: "compute.googleapis.com" },
-                          { name: "Cloud Run Admin API", id: "run.googleapis.com" },
-                          { name: "Cloud SQL Admin API", id: "sqladmin.googleapis.com" },
-                          { name: "Cloud Storage JSON API", id: "storage.googleapis.com" },
-                          { name: "Google Kubernetes Engine API", id: "container.googleapis.com" },
+                          {
+                            name: "Cloud Resource Manager API",
+                            id: "cloudresourcemanager.googleapis.com",
+                          },
+                          {
+                            name: "Compute Engine API",
+                            id: "compute.googleapis.com",
+                          },
+                          {
+                            name: "Cloud Run Admin API",
+                            id: "run.googleapis.com",
+                          },
+                          {
+                            name: "Cloud SQL Admin API",
+                            id: "sqladmin.googleapis.com",
+                          },
+                          {
+                            name: "Cloud Storage JSON API",
+                            id: "storage.googleapis.com",
+                          },
+                          {
+                            name: "Google Kubernetes Engine API",
+                            id: "container.googleapis.com",
+                          },
                         ].map((api) => (
-                          <li key={api.id} className="flex items-start gap-2 text-zinc-300">
+                          <li
+                            key={api.id}
+                            className="flex items-start gap-2 text-zinc-300"
+                          >
                             <span className="text-blue-500 mt-0.5">•</span>
                             <div>
-                              <div className="font-semibold text-zinc-200">{api.name}</div>
-                              <div className="text-[9px] text-zinc-500">{api.id}</div>
+                              <div className="font-semibold text-zinc-200">
+                                {api.name}
+                              </div>
+                              <div className="text-[9px] text-zinc-500">
+                                {api.id}
+                              </div>
                             </div>
                           </li>
                         ))}
@@ -567,10 +649,12 @@ export default function ProfilePage() {
               <div className="bg-zinc-900/10 border border-zinc-800/80 p-6 md:p-8 rounded-3xl backdrop-blur-2xl shadow-2xl relative">
                 <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-6">
                   <h3 className="text-sm font-mono tracking-wider uppercase text-zinc-300 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    <Cpu className="w-4 h-4 text-blue-500" />
                     Top 5 Recently Created Repositories
                   </h3>
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase">First by Creation Date</span>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                    First by Creation Date
+                  </span>
                 </div>
 
                 {top5Repos.length > 0 ? (
@@ -584,17 +668,22 @@ export default function ProfilePage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex flex-col gap-1 truncate pr-1">
                               <Link href={`/repos/${repo.id}`}>
-                                <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate" title={repo.name}>
+                                <h4
+                                  className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate"
+                                  title={repo.name}
+                                >
                                   {repo.name}
                                 </h4>
                               </Link>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
-                                  repo.private
-                                    ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                    : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
-                                )}>
+                                <span
+                                  className={cn(
+                                    "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
+                                    repo.private
+                                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                      : "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+                                  )}
+                                >
                                   {repo.private ? "Private" : "Public"}
                                 </span>
                               </div>
@@ -610,7 +699,11 @@ export default function ProfilePage() {
                           </div>
 
                           <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 h-8">
-                            {repo.description || <span className="italic text-zinc-700">No description provided.</span>}
+                            {repo.description || (
+                              <span className="italic text-zinc-700">
+                                No description provided.
+                              </span>
+                            )}
                           </p>
                         </div>
 
@@ -621,7 +714,9 @@ export default function ProfilePage() {
                                 <span
                                   className={`w-2 h-2 rounded-full ${
                                     LANGUAGE_COLOR_MAP[repo.language]
-                                      ? LANGUAGE_COLOR_MAP[repo.language].split(" ")[0]
+                                      ? LANGUAGE_COLOR_MAP[repo.language].split(
+                                          " ",
+                                        )[0]
                                       : "bg-zinc-400"
                                   }`}
                                 />
@@ -636,7 +731,10 @@ export default function ProfilePage() {
                           </div>
 
                           <span className="text-[9px] text-zinc-600 font-mono">
-                            Created {repo.created_at ? new Date(repo.created_at).toLocaleDateString() : "unknown"}
+                            Created{" "}
+                            {repo.created_at
+                              ? new Date(repo.created_at).toLocaleDateString()
+                              : "unknown"}
                           </span>
                         </div>
                       </div>
@@ -659,7 +757,8 @@ export default function ProfilePage() {
                       All Synced Repositories
                     </h3>
                     <p className="text-zinc-500 font-mono text-[10px] tracking-wider uppercase">
-                      Displaying {filteredRepos.length} of {repositories.length} total repositories
+                      Displaying {filteredRepos.length} of {repositories.length}{" "}
+                      total repositories
                     </p>
                   </div>
 
@@ -680,9 +779,15 @@ export default function ProfilePage() {
                       onChange={(e) => setSelectedLanguage(e.target.value)}
                       className="w-full sm:w-auto px-3.5 h-10 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-zinc-700 transition-all font-mono"
                     >
-                      <option value="all" className="bg-[#09090b]">All Languages</option>
+                      <option value="all" className="bg-[#09090b]">
+                        All Languages
+                      </option>
                       {uniqueLanguages.map((lang) => (
-                        <option key={lang} value={lang} className="bg-[#09090b]">
+                        <option
+                          key={lang}
+                          value={lang}
+                          className="bg-[#09090b]"
+                        >
                           {lang}
                         </option>
                       ))}
@@ -710,17 +815,22 @@ export default function ProfilePage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex flex-col gap-1 truncate pr-1">
                                 <Link href={`/repos/${repo.id}`}>
-                                  <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate" title={repo.name}>
+                                  <h4
+                                    className="text-sm font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors truncate"
+                                    title={repo.name}
+                                  >
                                     {repo.name}
                                   </h4>
                                 </Link>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className={cn(
-                                    "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
-                                    repo.private
-                                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                      : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
-                                  )}>
+                                  <span
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-widest border",
+                                      repo.private
+                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                        : "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+                                    )}
+                                  >
                                     {repo.private ? "Private" : "Public"}
                                   </span>
                                 </div>
@@ -736,7 +846,11 @@ export default function ProfilePage() {
                             </div>
 
                             <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 h-8">
-                              {repo.description || <span className="italic text-zinc-700">No description provided.</span>}
+                              {repo.description || (
+                                <span className="italic text-zinc-700">
+                                  No description provided.
+                                </span>
+                              )}
                             </p>
                           </div>
 
@@ -747,7 +861,9 @@ export default function ProfilePage() {
                                   <span
                                     className={`w-2 h-2 rounded-full ${
                                       LANGUAGE_COLOR_MAP[repo.language]
-                                        ? LANGUAGE_COLOR_MAP[repo.language].split(" ")[0]
+                                        ? LANGUAGE_COLOR_MAP[
+                                            repo.language
+                                          ].split(" ")[0]
                                         : "bg-zinc-400"
                                     }`}
                                   />
@@ -756,7 +872,9 @@ export default function ProfilePage() {
                               ) : (
                                 <>
                                   <Tag className="w-3.5 h-3.5 text-zinc-600" />
-                                  <span className="text-zinc-600">Untagged</span>
+                                  <span className="text-zinc-600">
+                                    Untagged
+                                  </span>
                                 </>
                               )}
                             </div>
@@ -785,9 +903,12 @@ export default function ProfilePage() {
                       <div className="inline-flex p-3 rounded-full bg-zinc-900/30 border border-zinc-800/60 text-zinc-600 mb-3">
                         <Github className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-semibold text-zinc-300">No repositories found</h4>
+                      <h4 className="text-sm font-semibold text-zinc-300">
+                        No repositories found
+                      </h4>
                       <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
-                        Try adjusting your search criteria, selecting a different language, or synchronizing repositories.
+                        Try adjusting your search criteria, selecting a
+                        different language, or synchronizing repositories.
                       </p>
                     </motion.div>
                   )}

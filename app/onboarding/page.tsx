@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { Floating3DParticles } from "@/components/ui/floating-3d-particles";
 import { saveUserProfile } from "@/lib/auth-client";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -16,7 +18,6 @@ import {
   Rocket,
   Building2,
   GraduationCap,
-  Sparkles,
   User,
   Users,
   Shield,
@@ -39,17 +40,20 @@ const STEPS = [
   {
     id: "useCase",
     title: "Choose your workspace profile",
-    description: "Help us configure the appropriate defaults and workspace parameters.",
+    description:
+      "Help us configure the appropriate defaults and workspace parameters.",
   },
   {
     id: "teamSize",
     title: "Define collaborator scale",
-    description: "Select the team capacity planning configuration for your environment.",
+    description:
+      "Select the team capacity planning configuration for your environment.",
   },
   {
     id: "fieldOfWork",
     title: "Select primary tech domain",
-    description: "Determine the boilerplate templates and library suggestions to provision.",
+    description:
+      "Determine the boilerplate templates and library suggestions to provision.",
   },
 ];
 
@@ -59,41 +63,48 @@ const USE_CASE_OPTIONS = [
     title: "Personal Projects",
     description: "Hobby projects, individual learning, or staging.",
     icon: Laptop,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "freelance",
     title: "Freelance / Agency",
     description: "Architecting custom software for client operations.",
     icon: Briefcase,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "startup",
     title: "Startup / SaaS Development",
     description: "Iterating on early stage products and building MVPs.",
     icon: Rocket,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "enterprise",
     title: "Enterprise Systems",
-    description: "Large-scale software engineering, compliance, and systems integration.",
+    description:
+      "Large-scale software engineering, compliance, and systems integration.",
     icon: Building2,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "education",
     title: "Academic & Training",
-    description: "Curriculum integration, teaching platforms, or learning labs.",
+    description:
+      "Curriculum integration, teaching platforms, or learning labs.",
     icon: GraduationCap,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "other",
     title: "Custom Use Case",
     description: "Specific business requirements not defined above.",
-    icon: Sparkles,
+    icon: Layers,
     selectedClass: "border-zinc-400 bg-zinc-800/[0.02]",
   },
 ];
@@ -104,35 +115,41 @@ const TEAM_SIZE_OPTIONS = [
     title: "Solo Workspace",
     description: "Optimized for a single software developer.",
     icon: User,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "2-10",
     title: "Small Business / Squad",
     description: "Designed for small teams of 2 to 10 builders.",
     icon: Users,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "11-50",
     title: "Mid-Market / Growth",
     description: "Scalable resources allocated for 11 to 50 active users.",
     icon: Zap,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "51-200",
     title: "Enterprise Segment",
-    description: "Orchestration and pipeline monitoring for 51 to 200 developers.",
+    description:
+      "Orchestration and pipeline monitoring for 51 to 200 developers.",
     icon: Building2,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "200+",
     title: "Global Enterprise Core",
     description: "Federated controls and provisioning for over 200+ members.",
     icon: Shield,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
 ];
 
@@ -142,55 +159,71 @@ const FIELD_OPTIONS = [
     title: "Web Engineering",
     description: "Fullstack SaaS systems, backend APIs, and web environments.",
     icon: Globe,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "mobile-dev",
     title: "Mobile App Development",
     description: "Native applications (iOS / Android) and hybrid libraries.",
     icon: Smartphone,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "data-science",
     title: "Artificial Intelligence & Data Systems",
-    description: "Data lakes, custom LLM fine-tuning, and model training pipelines.",
+    description:
+      "Data lakes, custom LLM fine-tuning, and model training pipelines.",
     icon: Cpu,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "design",
     title: "Creative & Interface Design",
     description: "UX strategies, layouts, animations, and Figma exports.",
     icon: Palette,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "marketing",
     title: "Growth & Analytics Engineering",
-    description: "Campaign infrastructure, funnel analysis, and data platforms.",
+    description:
+      "Campaign infrastructure, funnel analysis, and data platforms.",
     icon: TrendingUp,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "student",
     title: "Academic & Computer Science",
     description: "Boilerplate blueprints for learning system logic.",
     icon: BookOpen,
-    selectedClass: "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
+    selectedClass:
+      "border-blue-500 bg-blue-500/[0.02] shadow-[0_2px_12px_rgba(59,130,246,0.08)]",
   },
   {
     id: "other",
     title: "Custom Domain Focus",
     description: "Specialized engineering vertical not represented.",
-    icon: Sparkles,
+    icon: Cpu,
     selectedClass: "border-zinc-400 bg-zinc-800/[0.02]",
   },
 ];
 
 export default function OnboardingPage() {
   const { user, profile, loading } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const particleColor = mounted && resolvedTheme === "light" ? "#000000" : "#ffffff";
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     useCase: "",
@@ -222,7 +255,8 @@ export default function OnboardingPage() {
       }
     } else if (step.id === "fieldOfWork") {
       if (!formData.fieldOfWork) {
-        newErrors["fieldOfWork"] = "Please select your primary technology domain";
+        newErrors["fieldOfWork"] =
+          "Please select your primary technology domain";
         isValid = false;
       } else if (
         formData.fieldOfWork === "other" &&
@@ -298,7 +332,7 @@ export default function OnboardingPage() {
                       "group text-left p-4 rounded-xl border transition-all duration-200 bg-zinc-950/20",
                       isSelected
                         ? opt.selectedClass
-                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20"
+                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20",
                     )}
                   >
                     <div className="flex gap-3.5 items-start">
@@ -307,7 +341,7 @@ export default function OnboardingPage() {
                           "p-2 rounded-lg border transition-colors duration-200",
                           isSelected
                             ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200"
+                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200",
                         )}
                       >
                         <IconComponent className="w-4 h-4" />
@@ -357,7 +391,8 @@ export default function OnboardingPage() {
                   />
                   {errors.useCaseCustom && (
                     <p className="text-rose-500 text-xs ml-1 flex items-center gap-1.5 font-mono">
-                      <AlertCircle className="w-3.5 h-3.5" /> {errors.useCaseCustom}
+                      <AlertCircle className="w-3.5 h-3.5" />{" "}
+                      {errors.useCaseCustom}
                     </p>
                   )}
                 </motion.div>
@@ -384,7 +419,7 @@ export default function OnboardingPage() {
                       "group w-full text-left p-3.5 rounded-lg border transition-all duration-200 bg-zinc-950/20",
                       isSelected
                         ? opt.selectedClass
-                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20"
+                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20",
                     )}
                   >
                     <div className="flex gap-3.5 items-center">
@@ -393,14 +428,16 @@ export default function OnboardingPage() {
                           "p-2 rounded-lg border transition-colors duration-200",
                           isSelected
                             ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200"
+                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200",
                         )}
                       >
                         <IconComponent className="w-4 h-4" />
                       </div>
                       <div className="flex-1 flex justify-between items-center">
                         <div className="space-y-0.5">
-                          <h4 className="text-xs font-semibold text-white">{opt.title}</h4>
+                          <h4 className="text-xs font-semibold text-white">
+                            {opt.title}
+                          </h4>
                           <p className="text-[10px] text-zinc-400 leading-none">
                             {opt.description}
                           </p>
@@ -442,7 +479,7 @@ export default function OnboardingPage() {
                       "group text-left p-4 rounded-xl border transition-all duration-200 bg-zinc-950/20",
                       isSelected
                         ? opt.selectedClass
-                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20"
+                        : "border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/20",
                     )}
                   >
                     <div className="flex gap-3.5 items-start">
@@ -451,13 +488,15 @@ export default function OnboardingPage() {
                           "p-2 rounded-lg border transition-colors duration-200",
                           isSelected
                             ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200"
+                            : "bg-zinc-900/50 border-zinc-800 text-zinc-400 group-hover:text-zinc-200",
                         )}
                       >
                         <IconComponent className="w-4 h-4" />
                       </div>
                       <div className="space-y-0.5">
-                        <h4 className="text-xs font-semibold text-white">{opt.title}</h4>
+                        <h4 className="text-xs font-semibold text-white">
+                          {opt.title}
+                        </h4>
                         <p className="text-[11px] text-zinc-400 leading-normal">
                           {opt.description}
                         </p>
@@ -499,7 +538,8 @@ export default function OnboardingPage() {
                   />
                   {errors.fieldOfWorkCustom && (
                     <p className="text-rose-500 text-xs ml-1 flex items-center gap-1.5 font-mono">
-                      <AlertCircle className="w-3.5 h-3.5" /> {errors.fieldOfWorkCustom}
+                      <AlertCircle className="w-3.5 h-3.5" />{" "}
+                      {errors.fieldOfWorkCustom}
                     </p>
                   )}
                 </motion.div>
@@ -519,7 +559,12 @@ export default function OnboardingPage() {
   // Setup the clean structured parameters list
   const resourceSummary = [
     { label: "Account Scope", value: user.email || "Unknown" },
-    { label: "Developer ID", value: profile?.username ? `@${profile.username}` : "Pending configuration" },
+    {
+      label: "Developer ID",
+      value: profile?.username
+        ? `@${profile.username}`
+        : "Pending configuration",
+    },
     {
       label: "Workspace Profile",
       value: formData.useCase
@@ -528,7 +573,12 @@ export default function OnboardingPage() {
           : formData.useCase
         : "Pending configuration",
     },
-    { label: "Collaborator Scale", value: formData.teamSize ? `${formData.teamSize} member(s)` : "Pending configuration" },
+    {
+      label: "Collaborator Scale",
+      value: formData.teamSize
+        ? `${formData.teamSize} member(s)`
+        : "Pending configuration",
+    },
     {
       label: "Boilerplate Domain",
       value: formData.fieldOfWork
@@ -541,8 +591,14 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-transparent text-zinc-100 flex items-center justify-center p-4 md:p-8 lg:p-12 select-none relative overflow-hidden">
+      {/* 3D Floating Particles Background */}
+      <Floating3DParticles
+        color={particleColor}
+        className="pointer-events-none fixed inset-0 z-0"
+      />
+
       {/* Muted Premium Grid overlay */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#141416_1px,transparent_1px),linear-gradient(to_bottom,#141416_1px,transparent_1px)] bg-size-[24px_24px]" />
       </div>
 
@@ -564,7 +620,11 @@ export default function OnboardingPage() {
               <div className="flex items-center gap-3">
                 <div className="relative w-11 h-11 rounded-full overflow-hidden border border-zinc-800 shadow-sm bg-zinc-900 flex items-center justify-center">
                   {user.photoURL ? (
-                    <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                    <img
+                      src={user.photoURL}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-zinc-300 text-sm font-semibold font-mono">
                       {user.displayName
@@ -593,7 +653,10 @@ export default function OnboardingPage() {
 
               <div className="bg-zinc-950/20 border border-zinc-800 rounded-xl divide-y divide-zinc-800/60 p-1">
                 {resourceSummary.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2.5 px-3 text-[10px] font-mono">
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center py-2.5 px-3 text-[10px] font-mono"
+                  >
                     <span className="text-zinc-500">{item.label}</span>
                     <span className="text-zinc-200 font-medium capitalize max-w-[140px] truncate text-right">
                       {item.value}
@@ -607,7 +670,9 @@ export default function OnboardingPage() {
           {/* Minimal Status Progress Dotted Visual */}
           <div className="bg-zinc-950/40 border border-zinc-800/80 p-4 rounded-xl space-y-3 mt-6">
             <div className="flex items-center justify-between text-[9px] font-mono text-zinc-500">
-              <span className="uppercase tracking-wide font-semibold">Orchestration Phase</span>
+              <span className="uppercase tracking-wide font-semibold">
+                Orchestration Phase
+              </span>
               <span className="font-semibold text-blue-500">
                 {Math.round(((currentStep + 1) / STEPS.length) * 100)}%
               </span>
@@ -615,7 +680,9 @@ export default function OnboardingPage() {
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+                style={{
+                  width: `${((currentStep + 1) / STEPS.length) * 100}%`,
+                }}
               />
             </div>
           </div>
@@ -635,8 +702,8 @@ export default function OnboardingPage() {
                       currentStep === idx
                         ? "w-6 bg-blue-500"
                         : currentStep > idx
-                        ? "w-3 bg-zinc-500"
-                        : "w-1.5 bg-zinc-800"
+                          ? "w-3 bg-zinc-500"
+                          : "w-1.5 bg-zinc-800",
                     )}
                   />
                 ))}
@@ -648,7 +715,7 @@ export default function OnboardingPage() {
 
             {/* Heading Section */}
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-white/95">
+              <h1 className="text-2xl font-semibold  text-white/95">
                 {STEPS[currentStep].title}
               </h1>
               <p className="text-zinc-400 text-xs leading-relaxed max-w-lg">
@@ -693,7 +760,7 @@ export default function OnboardingPage() {
                 "h-10 px-5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]",
                 currentStep === STEPS.length - 1
                   ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                  : "bg-white hover:bg-zinc-200 text-zinc-950 font-bold"
+                  : "bg-white hover:bg-zinc-200 text-zinc-950 font-bold",
               )}
             >
               {isSaving ? (
@@ -703,7 +770,11 @@ export default function OnboardingPage() {
                 </>
               ) : (
                 <>
-                  <span>{currentStep === STEPS.length - 1 ? "Complete Setup" : "Continue"}</span>
+                  <span>
+                    {currentStep === STEPS.length - 1
+                      ? "Complete Setup"
+                      : "Continue"}
+                  </span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
