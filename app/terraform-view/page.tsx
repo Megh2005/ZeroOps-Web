@@ -177,11 +177,8 @@ export default function TerraformViewPage() {
     if (savedCode) {
       setCode(savedCode)
       setOriginalCode(savedOriginal || savedCode)
-    } else {
-      toast.error("No Terraform code found. Redirecting to builder.")
-      router.push("/builder")
     }
-  }, [router])
+  }, [])
 
   const handleValidate = async () => {
     if (!code) return
@@ -218,6 +215,10 @@ export default function TerraformViewPage() {
       ];
 
       const { optimizedCode, tips } = await optimizeTerraform(code, activeStrategiesLabels)
+      if (!originalCode) {
+        setOriginalCode(code)
+        sessionStorage.setItem("original_terraform_code", code)
+      }
       setCode(optimizedCode)
       setOptimizationTips(tips)
       setViewMode("diff")
