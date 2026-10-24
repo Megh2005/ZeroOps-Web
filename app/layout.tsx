@@ -1,10 +1,12 @@
 import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { AuthGuard } from "@/components/auth-guard";
 import { Toaster } from "sonner";
-import { Outfit } from "next/font/google";
+import { Roboto_Slab } from "next/font/google";
+import { NavigationDock } from "@/components/navigation-dock";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
@@ -13,9 +15,9 @@ export const metadata: Metadata = {
     "Visual drag-and-drop infrastructure designer with Terraform export",
 };
 
-const outfit = Outfit({
+const robotoSlab = Roboto_Slab({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-roboto-slab",
 });
 
 export default function RootLayout({
@@ -25,34 +27,37 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${outfit.className} bg-transparent text-zinc-100 min-h-screen selection:bg-blue-500/30`}>
-        {/* Global Formal Background */}
-        <div className="fixed inset-0 z-[-1] h-full w-full bg-[#09090b]">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]"></div>
-          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-blue-500 opacity-[0.15] blur-[100px]"></div>
-        </div>
-
-        <div className="flex h-screen w-screen items-center justify-center p-4 xl:hidden z-10 relative">
-          <Alert
-            className="bg-zinc-950 border-red-500/50 text-red-500 text-2xl text-center justify-center content-center"
-            variant="destructive"
-          >
-            <AlertTitle>Access Denied On Mobile</AlertTitle>
-          </Alert>
-        </div>
-        <div className="hidden xl:block relative z-10">
-          <AuthProvider>
-            <AuthGuard>{children}</AuthGuard>
-          </AuthProvider>
-          <Toaster
-            theme="dark"
-            position="top-right"
-            richColors
-            closeButton
-            expand={true}
-            duration={3000}
-          />
-        </div>
+      <body
+        className={`${robotoSlab.variable} ${robotoSlab.className} min-h-screen bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <div className="flex h-screen w-screen items-center justify-center p-4 xl:hidden z-10 relative">
+            <Alert
+              className="border-destructive/50 text-destructive text-2xl text-center justify-center content-center"
+              variant="destructive"
+            >
+              <AlertTitle>Access Denied On Mobile</AlertTitle>
+            </Alert>
+          </div>
+          <div className="hidden xl:block relative z-10">
+            <AuthProvider>
+              <AuthGuard>{children}</AuthGuard>
+              <NavigationDock />
+            </AuthProvider>
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              expand={true}
+              duration={3000}
+            />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
