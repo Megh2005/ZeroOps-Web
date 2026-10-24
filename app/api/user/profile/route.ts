@@ -36,10 +36,8 @@ export async function POST(req: Request) {
     await connectToDatabase();
 
     const updateData: Record<string, any> = {};
-    if (body.aid !== undefined) updateData.aid = body.aid;
-    if (body.useCase !== undefined) updateData.useCase = body.useCase;
-    if (body.teamSize !== undefined) updateData.teamSize = body.teamSize;
-    if (body.fieldOfWork !== undefined) updateData.fieldOfWork = body.fieldOfWork;
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.photoURL !== undefined) updateData.photoURL = body.photoURL;
 
     const updatedUser = await User.findOneAndUpdate(
       { email: session.user.email.toLowerCase() },

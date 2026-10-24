@@ -22,10 +22,6 @@ export interface IUser extends Document {
   name?: string;
   githubId: string;
   photoURL?: string;
-  aid?: string;
-  useCase?: string;
-  teamSize?: string;
-  fieldOfWork?: string;
   repositories: IRepository[];
   createdAt: Date;
   updatedAt: Date;
@@ -76,22 +72,6 @@ const UserSchema = new Schema<IUser>(
       index: true,
     },
     photoURL: {
-      type: String,
-      default: "",
-    },
-    aid: {
-      type: String,
-      default: "",
-    },
-    useCase: {
-      type: String,
-      default: "",
-    },
-    teamSize: {
-      type: String,
-      default: "",
-    },
-    fieldOfWork: {
       type: String,
       default: "",
     },
