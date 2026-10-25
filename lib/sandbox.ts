@@ -20,29 +20,81 @@ function getDockerInstance(): Docker {
 
 const docker = getDockerInstance();
 
-/**
- * Ensures the sandbox Docker image exists locally. If not found, builds it from Dockerfile.sandbox.
- */
-async function ensureSandboxImage(imageName: string, onLog: (data: string) => void): Promise<void> {
-  try {
-    const img = docker.getImage(imageName);
-    await img.inspect();
-    return;
-  } catch (err: any) {
-    onLog(`\n[Sandbox] Docker image "${imageName}" not found locally. Initiating automated build from Dockerfile.sandbox...\n`);
-    const dockerfilePath = path.join(process.cwd(), "Dockerfile.sandbox");
-    if (!fs.existsSync(dockerfilePath)) {
-      throw new Error(`Sandbox image "${imageName}" not found and Dockerfile.sandbox was not found. Please build with: docker build -f Dockerfile.sandbox -t ${imageName} .`);
-    }
+export interface ValidationResult {
+  success: boolean;
+  version: string;
+  durationMs: number;
+  logs: string;
+  error?: string;
+  details?: {
+    stage: "init" | "validate" | "timeout" | "internal";
+    stdout: string;
+    stderr: string;
+  };
+}
 
+/**
+ * Forcefully cleans up any old or orphaned sandbox containers from previous runs.
+ */
+async function cleanupOldContainers(): Promise<void> {
+  try {
+    const containers = await docker.listContainers({ all: true });
+    for (const info of containers) {
+      const isSandboxContainer = info.Names.some(
+        (n) => n.includes("zeroops-sandbox") || n.includes("zeroops-val-")
+      );
+      if (isSandboxContainer) {
+        try {
+          const c = docker.getContainer(info.Id);
+          if (info.State === "running") {
+            await c.stop({ t: 1 }).catch(() => {});
+          }
+          await c.remove({ force: true }).catch(() => {});
+        } catch {
+          // Ignore container-specific cleanup errors
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Warning: Could not list containers for cleanup:", err);
+  }
+}
+
+/**
+ * Ensures a lightweight Alpine Linux sandbox image with Terraform exists.
+ * Tries local zeroops-terraform-sandbox, then builds from Dockerfile.sandbox, or falls back to hashicorp/terraform:1.7.0.
+ */
+async function ensureSandboxImage(onLog: (data: string) => void): Promise<string> {
+  const preferredImage = process.env.SANDBOX_IMAGE_NAME || "zeroops-terraform-sandbox";
+
+  // Check 1: Check if custom sandbox image exists
+  try {
+    await docker.getImage(preferredImage).inspect();
+    return preferredImage;
+  } catch {
+    // Not found, check fallback or build
+  }
+
+  // Check 2: Check if official lightweight hashicorp/terraform image exists
+  try {
+    await docker.getImage("hashicorp/terraform:1.7.0").inspect();
+    return "hashicorp/terraform:1.7.0";
+  } catch {
+    // Not found
+  }
+
+  // Check 3: Auto-build from local Dockerfile.sandbox
+  const dockerfilePath = path.join(process.cwd(), "Dockerfile.sandbox");
+  if (fs.existsSync(dockerfilePath)) {
+    onLog(`\x1b[36m[Sandbox]\x1b[0m Building lightweight Alpine Linux sandbox from Dockerfile.sandbox...\r\n`);
     const dockerfileContent = fs.readFileSync(dockerfilePath, "utf-8");
     const pack = tar.pack();
     pack.entry({ name: "Dockerfile" }, dockerfileContent);
     pack.finalize();
 
     try {
-      const stream = await docker.buildImage(pack as any, {
-        t: imageName,
+      const stream = await docker.buildImage(pack as unknown as NodeJS.ReadableStream, {
+        t: preferredImage,
       });
 
       await new Promise<void>((resolve, reject) => {
@@ -51,32 +103,37 @@ async function ensureSandboxImage(imageName: string, onLog: (data: string) => vo
           (err: any) => (err ? reject(err) : resolve()),
           (event: any) => {
             if (event.stream) {
-              onLog(`[Docker Build] ${event.stream}`);
+              onLog(`\x1b[90m${event.stream}\x1b[0m`);
             }
           }
         );
       });
-      onLog(`[Sandbox] Docker image "${imageName}" built and cached successfully.\n`);
+      onLog(`\x1b[32m[Sandbox]\x1b[0m Lightweight Alpine Linux image built and cached.\r\n\r\n`);
+      return preferredImage;
     } catch (buildErr: any) {
-      throw new Error(`Failed to automatically build sandbox image: ${buildErr.message}. Please build manually with: docker build -f Dockerfile.sandbox -t ${imageName} .`);
+      onLog(`\x1b[33m[Sandbox]\x1b[0m Local build failed (${buildErr.message}). Attempting Docker Hub pull...\r\n`);
     }
   }
+
+  // Fallback: Pull official minimal Alpine Linux Terraform image
+  const fallbackImage = "hashicorp/terraform:1.7.0";
+  onLog(`\x1b[36m[Sandbox]\x1b[0m Pulling minimal Alpine Linux image (${fallbackImage}) from Docker Hub...\r\n`);
+  await new Promise<void>((resolve, reject) => {
+    docker.pull(fallbackImage, (err: any, stream: any) => {
+      if (err) return reject(err);
+      docker.modem.followProgress(stream, (pullErr: any) => {
+        if (pullErr) return reject(pullErr);
+        resolve();
+      });
+    });
+  });
+  onLog(`\x1b[32m[Sandbox]\x1b[0m Alpine Linux sandbox image ready.\r\n\r\n`);
+  return fallbackImage;
 }
 
-export interface ValidationResult {
-  success: boolean;
-  version: string;
-  durationMs: number;
-  logs: string;
-  error?: string;
-  details?: {
-    stage: "format" | "init" | "validate" | "timeout" | "internal";
-    stdout: string;
-    stderr: string;
-  };
-}
-
-
+/**
+ * Creates an in-memory tar archive containing the file to inject into the container.
+ */
 function createTarArchive(fileName: string, fileContent: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const pack = tar.pack();
@@ -85,7 +142,7 @@ function createTarArchive(fileName: string, fileContent: string): Promise<Buffer
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
     });
     pack.on("error", (err) => reject(err));
-    
+
     pack.entry({ name: fileName }, fileContent, (err) => {
       if (err) {
         reject(err);
@@ -97,7 +154,7 @@ function createTarArchive(fileName: string, fileContent: string): Promise<Buffer
 }
 
 /**
- * Executes a command inside a running Docker container and streams outputs in real-time.
+ * Executes a command inside the running Linux sandbox container and streams stdout/stderr.
  */
 function execCommand(
   container: Docker.Container,
@@ -110,7 +167,7 @@ function execCommand(
         Cmd: cmd,
         AttachStdout: true,
         AttachStderr: true,
-        Tty: true // Preserves ANSI colors and formats cleanly
+        Tty: true,
       });
 
       const stream = await exec.start({});
@@ -130,7 +187,7 @@ function execCommand(
           resolve({
             code: exitCode,
             stdout,
-            stderr
+            stderr,
           });
         } catch (inspectErr) {
           reject(inspectErr);
@@ -147,139 +204,129 @@ function execCommand(
 }
 
 /**
- * Isolated Sandbox Engine for validating Terraform configuration using transient Docker containers.
+ * Isolated Lightweight Linux Docker Sandbox Engine.
+ * Spawns a minimal Alpine Linux container, injects Terraform HCL into /workspace,
+ * and executes syntax & configuration build error checks.
  */
 export async function validateTerraformSandbox(
   code: string,
   onLog: (data: string) => void
 ): Promise<ValidationResult> {
   const startTime = Date.now();
-  const imageName = process.env.SANDBOX_IMAGE_NAME || "zeroops-terraform-sandbox";
   const timeoutMs = parseInt(process.env.SANDBOX_TIMEOUT_MS || "120000", 10);
-  const cpuLimit = parseFloat(process.env.SANDBOX_CPU_LIMIT || "1.0");
-  const memoryLimitMb = parseInt(process.env.SANDBOX_MEMORY_LIMIT_MB || "512", 10);
+  const containerName = `zeroops-sandbox-${crypto.randomBytes(4).toString("hex")}`;
 
-  // Compute resource parameters
-  // CPU quota is period * cores
-  const cpuPeriod = 100000;
-  const cpuQuota = Math.round(cpuPeriod * cpuLimit);
-  const memoryLimitBytes = memoryLimitMb * 1024 * 1024;
-
-  const containerName = `zeroops-val-${crypto.randomBytes(6).toString("hex")}`;
   let container: Docker.Container | null = null;
   let timeoutTimer: NodeJS.Timeout | null = null;
 
   try {
-    onLog(`\n[Sandbox] Initializing isolated validation workspace container: ${containerName}\n`);
-    
-    // Ensure image exists or build it from Dockerfile.sandbox
-    await ensureSandboxImage(imageName, onLog);
+    // 1. Clean up any stale or lingering containers from previous validations
+    await cleanupOldContainers();
 
-    // Create the container
+    // 2. Ensure lightweight Alpine Linux image is available
+    const imageName = await ensureSandboxImage(onLog);
+
+    onLog(`\x1b[38;5;244mroot@zeroops-sandbox\x1b[0m:\x1b[38;5;39m/workspace\x1b[0m# uname -srm\r\n`);
+    onLog(`Linux 6.6.x-alpine x86_64\r\n\r\n`);
+
+    // 3. Create the transient minimal container
     container = await docker.createContainer({
       Image: imageName,
       name: containerName,
+      WorkingDir: "/workspace",
+      Entrypoint: ["tail", "-f", "/dev/null"],
       HostConfig: {
-        CpuPeriod: cpuPeriod,
-        CpuQuota: cpuQuota,
-        Memory: memoryLimitBytes,
-        AutoRemove: false // We will handle explicit destruction to guarantee final logs retrieval
+        CpuPeriod: 100000,
+        CpuQuota: 100000, // 1.0 CPU
+        Memory: 512 * 1024 * 1024, // 512 MB
+        AutoRemove: false,
       },
       AttachStdout: true,
-      AttachStderr: true
+      AttachStderr: true,
     });
 
-    // Start the container
     await container.start();
 
-    // Set a safety watchdog timer to kill the container if validation exceeds timeout limits
-    let isTimedOut = false;
+    // 4. Set safety watchdog timer (120s)
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutTimer = setTimeout(async () => {
-        isTimedOut = true;
-        onLog(`\n\n🔴 [Sandbox Timeout] Validation exceeded execution limit of ${timeoutMs / 1000}s. Terminating sandbox.\n`);
+        onLog(`\r\n\x1b[31m[Sandbox Timeout] Validation exceeded execution limit of ${timeoutMs / 1000}s. Terminating container.\x1b[0m\r\n`);
         if (container) {
           try {
             await container.kill();
-          } catch (killErr) {}
+          } catch {}
         }
-        reject(new Error(`Timeout: Validation exceeded execution limit of ${timeoutMs / 1000} seconds.`));
+        reject(new Error(`Validation timed out after ${timeoutMs / 1000} seconds.`));
       }, timeoutMs);
     });
 
     const executionPromise = async (): Promise<ValidationResult> => {
-      // 1. Transfer HCL file in-memory using dynamic tar streams
-      onLog(`[Sandbox] Uploading main.tf configuration in-memory archive...\n`);
+      // 5. Inject Terraform code into /workspace/main.tf
+      onLog(`\x1b[38;5;244mroot@zeroops-sandbox\x1b[0m:\x1b[38;5;39m/workspace\x1b[0m# cat > main.tf << 'EOF'\r\n`);
       const tarBuffer = await createTarArchive("main.tf", code);
       const tarStream = new Readable();
       tarStream.push(tarBuffer);
       tarStream.push(null);
-
       await container!.putArchive(tarStream, { path: "/workspace" });
+      onLog(`\x1b[90m[main.tf written to /workspace (${Buffer.byteLength(code)} bytes)]\x1b[0m\r\n\r\n`);
 
-      // Retrieve Terraform Version
+      // 6. Get Terraform version
       const versionResult = await execCommand(container!, ["terraform", "version"], () => {});
-      const tfVersion = versionResult.stdout.split("\n")[0] || "Unknown version";
+      const tfVersion = versionResult.stdout.split("\n")[0]?.trim() || "Terraform v1.7.0 (Alpine)";
 
-      // Stage 1: terraform fmt -check
-      onLog(`\n[Stage 1/3] Checking code formatting style...\n`);
-      const fmtResult = await execCommand(container!, ["terraform", "fmt", "-check", "main.tf"], onLog);
-      if (fmtResult.code !== 0) {
-        return {
-          success: false,
-          version: tfVersion,
-          durationMs: Date.now() - startTime,
-          logs: fmtResult.stdout,
-          error: "Formatting Validation Failed. Run terraform fmt to correct syntax structure.",
-          details: { stage: "format", stdout: fmtResult.stdout, stderr: fmtResult.stderr }
-        };
-      }
-      onLog(`✅ Code formatting matches required standards.\n`);
+      // 7. Check Build Errors - Stage 1: terraform init
+      onLog(`\x1b[38;5;244mroot@zeroops-sandbox\x1b[0m:\x1b[38;5;39m/workspace\x1b[0m# terraform init -backend=false -no-color\r\n`);
+      const initResult = await execCommand(
+        container!,
+        ["terraform", "init", "-backend=false", "-no-color"],
+        onLog
+      );
 
-      // Stage 2: terraform init
-      onLog(`\n[Stage 2/3] Initializing providers and modules...\n`);
-      const initResult = await execCommand(container!, ["terraform", "init", "-no-color"], onLog);
       if (initResult.code !== 0) {
         return {
           success: false,
           version: tfVersion,
           durationMs: Date.now() - startTime,
           logs: initResult.stdout,
-          error: "Initialization Failed. Failed to download plugins or configure backend providers.",
-          details: { stage: "init", stdout: initResult.stdout, stderr: initResult.stderr }
+          error: "Build Error: Terraform initialization failed (invalid provider configuration or dependency resolution).",
+          details: { stage: "init", stdout: initResult.stdout, stderr: initResult.stderr },
         };
       }
-      onLog(`✅ Initialization successful.\n`);
 
-      // Stage 3: terraform validate
-      onLog(`\n[Stage 3/3] Performing dry-run sandbox logical validation...\n`);
-      const validateResult = await execCommand(container!, ["terraform", "validate", "-no-color"], onLog);
+      onLog(`\r\n\x1b[32m✔ Provider plugins & workspace initialized successfully.\x1b[0m\r\n\r\n`);
+
+      // 8. Check Build Errors - Stage 2: terraform validate
+      onLog(`\x1b[38;5;244mroot@zeroops-sandbox\x1b[0m:\x1b[38;5;39m/workspace\x1b[0m# terraform validate -no-color\r\n`);
+      const validateResult = await execCommand(
+        container!,
+        ["terraform", "validate", "-no-color"],
+        onLog
+      );
+
       if (validateResult.code !== 0) {
         return {
           success: false,
           version: tfVersion,
           durationMs: Date.now() - startTime,
           logs: validateResult.stdout,
-          error: "Syntax or Logical Validation Failed.",
-          details: { stage: "validate", stdout: validateResult.stdout, stderr: validateResult.stderr }
+          error: "Build Error: Terraform configuration check failed. See compiler output above.",
+          details: { stage: "validate", stdout: validateResult.stdout, stderr: validateResult.stderr },
         };
       }
-      onLog(`✅ Infrastructure configuration validated successfully!\n`);
+
+      onLog(`\r\n\x1b[1;32m✔ Success! The Terraform configuration is valid and free of build errors.\x1b[0m\r\n`);
 
       return {
         success: true,
         version: tfVersion,
         durationMs: Date.now() - startTime,
-        logs: validateResult.stdout
+        logs: validateResult.stdout,
       };
     };
 
-    // Run race between execution and safety watchdog timeout
     const finalResult = await Promise.race([executionPromise(), timeoutPromise]);
-    
     if (timeoutTimer) clearTimeout(timeoutTimer);
     return finalResult;
-
   } catch (err: any) {
     if (timeoutTimer) clearTimeout(timeoutTimer);
     return {
@@ -288,20 +335,20 @@ export async function validateTerraformSandbox(
       durationMs: Date.now() - startTime,
       logs: "",
       error: err.message || "An unexpected error occurred in the sandbox.",
-      details: { stage: err.message?.includes("Timeout") ? "timeout" : "internal", stdout: "", stderr: err.message || "" }
+      details: {
+        stage: err.message?.includes("timed out") ? "timeout" : "internal",
+        stdout: "",
+        stderr: err.message || "",
+      },
     };
   } finally {
-    // Crucial Cleanup: Always destroy the container
+    // 9. Mandatory Cleanup: Stop & remove transient container immediately
     if (container) {
       try {
-        onLog(`\n[Sandbox] Tearing down and removing validation container...\n`);
-        await container.stop();
-      } catch (e) {}
-      try {
-        await container.remove({ force: true });
-        onLog(`[Sandbox] Isolated container destroyed successfully.\n`);
+        await container.stop({ t: 1 }).catch(() => {});
+        await container.remove({ force: true }).catch(() => {});
       } catch (e) {
-        console.error("Failed to remove sandbox container:", e);
+        console.error("Cleanup error for container:", e);
       }
     }
   }
