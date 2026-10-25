@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
-import { Terminal as TerminalIcon, X, Loader2, Play, AlertTriangle, ShieldCheck, Cpu, HardDrive, Clock } from "lucide-react"
+import { FiTerminal, FiX, FiLoader, FiAlertTriangle, FiShield, FiCpu, FiHardDrive, FiClock } from "react-icons/fi"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { TerminalIcon, X } from "lucide-react"
 
 // We use xterm dynamically inside useEffect because it accesses window/DOM and fails during Next.js SSR build
 interface SandboxConsoleProps {
@@ -180,7 +181,7 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
         <div className="p-6 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-950/20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <TerminalIcon className="w-5 h-5" />
+              <FiTerminal className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-zinc-100 flex items-center gap-2">
@@ -194,7 +195,7 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
             disabled={running}
             className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
           >
-            <X className="w-4 h-4" />
+            <FiX className="w-4 h-4" />
           </button>
         </div>
 
@@ -203,30 +204,30 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
           {/* Environment specifications */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-[11px]">
             <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-850 flex items-center gap-2.5">
-              <Cpu className="w-4 h-4 text-purple-400 shrink-0" />
+              <FiCpu className="w-4 h-4 text-purple-400 shrink-0" />
               <div>
                 <span className="text-zinc-500 uppercase tracking-wider block text-[9px] mb-0.5">CPU Core Limit</span>
                 <span className="text-zinc-200 font-bold">1 Core (Shared)</span>
               </div>
             </div>
             <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-850 flex items-center gap-2.5">
-              <HardDrive className="w-4 h-4 text-purple-400 shrink-0" />
+              <FiHardDrive className="w-4 h-4 text-purple-400 shrink-0" />
               <div>
                 <span className="text-zinc-500 uppercase tracking-wider block text-[9px] mb-0.5">RAM Limits</span>
                 <span className="text-zinc-200 font-bold">512 MB Isolation</span>
               </div>
             </div>
             <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-850 flex items-center gap-2.5">
-              <Clock className="w-4 h-4 text-purple-400 shrink-0" />
+              <FiClock className="w-4 h-4 text-purple-400 shrink-0" />
               <div>
                 <span className="text-zinc-500 uppercase tracking-wider block text-[9px] mb-0.5">Execution Timeout</span>
-                <span className="text-zinc-200 font-bold">60 Seconds Limit</span>
+                <span className="text-zinc-200 font-bold">120 Seconds Limit</span>
               </div>
             </div>
           </div>
 
           {/* xterm.js Terminal Container */}
-          <div className="border border-zinc-800 bg-[#09090b] rounded-xl overflow-hidden shadow-2xl p-4 min-h-[300px]">
+          <div className="border border-zinc-800 bg-[#09090b] rounded-xl overflow-hidden shadow-2xl p-4 min-h-75">
             <div ref={terminalRef} className="w-full h-full" />
           </div>
 
@@ -243,9 +244,9 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
             >
               <div className="flex items-center gap-2.5">
                 {result.success ? (
-                  <ShieldCheck className="w-5 h-5" />
+                  <FiShield className="w-5 h-5" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5" />
+                  <FiAlertTriangle className="w-5 h-5" />
                 )}
                 <h4 className="font-bold text-xs uppercase tracking-wider">
                   {result.success ? "Sandbox dry-run Passed" : "Sandbox dry-run Failed"}
@@ -278,7 +279,7 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
           <div className="text-[10px] font-mono text-zinc-500">
             {running ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="w-3 h-3 animate-spin text-purple-400" />
+                <FiLoader className="w-3 h-3 animate-spin text-purple-400" />
                 Validating syntax logic...
               </span>
             ) : (

@@ -155,7 +155,7 @@ export async function validateTerraformSandbox(
 ): Promise<ValidationResult> {
   const startTime = Date.now();
   const imageName = process.env.SANDBOX_IMAGE_NAME || "zeroops-terraform-sandbox";
-  const timeoutMs = parseInt(process.env.SANDBOX_TIMEOUT_MS || "60000", 10);
+  const timeoutMs = parseInt(process.env.SANDBOX_TIMEOUT_MS || "120000", 10);
   const cpuLimit = parseFloat(process.env.SANDBOX_CPU_LIMIT || "1.0");
   const memoryLimitMb = parseInt(process.env.SANDBOX_MEMORY_LIMIT_MB || "512", 10);
 
