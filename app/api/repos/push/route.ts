@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Repository not found" }, { status: 404 });
     }
 
-    const accessToken = process.env.GITHUB_PRIVATE_ACCESS_TOKEN || (session as any).accessToken;
+    const accessToken = (session as any).accessToken || process.env.GITHUB_PRIVATE_ACCESS_TOKEN;
     if (!accessToken) {
       return NextResponse.json({ success: false, error: "GitHub access token missing" }, { status: 401 });
     }

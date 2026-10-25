@@ -2,6 +2,8 @@ import Docker from "dockerode";
 import tar from "tar-stream";
 import { Readable } from "stream";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 // Initialize Docker Instance dynamically based on OS platform
 function getDockerInstance(): Docker {
@@ -17,6 +19,49 @@ function getDockerInstance(): Docker {
 }
 
 const docker = getDockerInstance();
+
+/**
+ * Ensures the sandbox Docker image exists locally. If not found, builds it from Dockerfile.sandbox.
+ */
+async function ensureSandboxImage(imageName: string, onLog: (data: string) => void): Promise<void> {
+  try {
+    const img = docker.getImage(imageName);
+    await img.inspect();
+    return;
+  } catch (err: any) {
+    onLog(`\n[Sandbox] Docker image "${imageName}" not found locally. Initiating automated build from Dockerfile.sandbox...\n`);
+    const dockerfilePath = path.join(process.cwd(), "Dockerfile.sandbox");
+    if (!fs.existsSync(dockerfilePath)) {
+      throw new Error(`Sandbox image "${imageName}" not found and Dockerfile.sandbox was not found. Please build with: docker build -f Dockerfile.sandbox -t ${imageName} .`);
+    }
+
+    const dockerfileContent = fs.readFileSync(dockerfilePath, "utf-8");
+    const pack = tar.pack();
+    pack.entry({ name: "Dockerfile" }, dockerfileContent);
+    pack.finalize();
+
+    try {
+      const stream = await docker.buildImage(pack as any, {
+        t: imageName,
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        docker.modem.followProgress(
+          stream,
+          (err: any) => (err ? reject(err) : resolve()),
+          (event: any) => {
+            if (event.stream) {
+              onLog(`[Docker Build] ${event.stream}`);
+            }
+          }
+        );
+      });
+      onLog(`[Sandbox] Docker image "${imageName}" built and cached successfully.\n`);
+    } catch (buildErr: any) {
+      throw new Error(`Failed to automatically build sandbox image: ${buildErr.message}. Please build manually with: docker build -f Dockerfile.sandbox -t ${imageName} .`);
+    }
+  }
+}
 
 export interface ValidationResult {
   success: boolean;
@@ -127,6 +172,9 @@ export async function validateTerraformSandbox(
   try {
     onLog(`\n[Sandbox] Initializing isolated validation workspace container: ${containerName}\n`);
     
+    // Ensure image exists or build it from Dockerfile.sandbox
+    await ensureSandboxImage(imageName, onLog);
+
     // Create the container
     container = await docker.createContainer({
       Image: imageName,
