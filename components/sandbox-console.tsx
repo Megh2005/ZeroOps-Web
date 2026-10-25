@@ -32,24 +32,24 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
   useEffect(() => {
     let active = true
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
+    let resizeObserver: ResizeObserver | null = null
 
     const initTerminal = async () => {
       // Dynamic imports to prevent SSR execution failure
       const { Terminal } = await import("xterm")
       const { FitAddon } = await import("xterm-addon-fit")
-      // @ts-ignore
-      await import("xterm/css/xterm.css")
 
       if (!active || !terminalRef.current) return
 
-      // Authentic Linux Terminal Theme (High contrast, crisp monospace)
+      // High-contrast, authentic Linux terminal configuration
       const term = new Terminal({
         cursorBlink: true,
         cursorStyle: "block",
         theme: {
-          background: "#08090d",
+          background: "#050608",
           foreground: "#f8fafc",
           cursor: "#22c55e",
+          cursorAccent: "#050608",
           selectionBackground: "#334155",
           selectionForeground: "#ffffff",
           black: "#1e293b",
@@ -59,36 +59,55 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
           blue: "#60a5fa",
           magenta: "#c084fc",
           cyan: "#38bdf8",
-          white: "#f8fafc",
-          brightBlack: "#64748b",
+          white: "#ffffff",
+          brightBlack: "#94a3b8",
           brightRed: "#ef4444",
           brightGreen: "#22c55e",
           brightYellow: "#eab308",
-          brightBlue: "#3b82f6",
-          brightMagenta: "#a855f7",
-          brightCyan: "#06b6d4",
+          brightBlue: "#38bdf8",
+          brightMagenta: "#d8b4fe",
+          brightCyan: "#7dd3fc",
           brightWhite: "#ffffff",
         },
         fontSize: 13,
         lineHeight: 1.45,
         fontFamily:
-          '"JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, "Courier New", monospace',
+          '"JetBrains Mono", "Cascadia Code", "Fira Code", "Courier New", Courier, monospace',
         fontWeight: "500",
-        letterSpacing: 0.3,
+        fontWeightBold: "700",
         convertEol: true,
-        rows: 16,
+        scrollback: 1000,
+        allowTransparency: false,
       })
 
       const fitAddon = new FitAddon()
       term.loadAddon(fitAddon)
       term.open(terminalRef.current)
-      fitAddon.fit()
+
+      // Fit with small delay so DOM render & layout complete
+      setTimeout(() => {
+        try {
+          fitAddon.fit()
+        } catch {}
+      }, 50)
+
+      // Auto-fit on resize using ResizeObserver
+      if (terminalRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          try {
+            fitAddon.fit()
+          } catch {}
+        })
+        resizeObserver.observe(terminalRef.current)
+      }
 
       xtermInstanceRef.current = term
 
-      // Initial Linux Boot & Shell Welcome Banner
-      term.writeln("\x1b[1;36m=== ZeroOps Isolated Linux Sandbox (Alpine 3.19 x86_64) ===\x1b[0m")
-      term.writeln("\x1b[90mPreparing local Docker container & mounting /workspace volume...\x1b[0m\r\n")
+      // Initial Linux Shell Header
+      term.writeln("\x1b[1;36m┌─────────────────────────────────────────────────────────────┐\x1b[0m")
+      term.writeln("\x1b[1;36m│\x1b[0m  \x1b[1;32mZeroOps Isolated Linux Sandbox (Alpine 3.19 x86_64)\x1b[0m         \x1b[1;36m│\x1b[0m")
+      term.writeln("\x1b[1;36m│\x1b[0m  \x1b[37mLocal Docker Container • Terraform v1.7.0 CLI Engine\x1b[0m       \x1b[1;36m│\x1b[0m")
+      term.writeln("\x1b[1;36m└─────────────────────────────────────────────────────────────┘\x1b[0m\r\n")
 
       // Trigger Validation Execution
       runValidation(term)
@@ -164,20 +183,11 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
 
     initTerminal()
 
-    const handleResize = () => {
-      if (xtermInstanceRef.current) {
-        try {
-          const fitAddon = new (require("xterm-addon-fit").FitAddon)()
-          xtermInstanceRef.current.loadAddon(fitAddon)
-          fitAddon.fit()
-        } catch {}
-      }
-    }
-    window.addEventListener("resize", handleResize)
-
     return () => {
       active = false
-      window.removeEventListener("resize", handleResize)
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
       if (reader) {
         try {
           reader.cancel()
@@ -192,73 +202,76 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
   }, [code])
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-mono">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 font-mono">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        initial={{ opacity: 0, scale: 0.97, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 16 }}
-        className="bg-[#0b0c10] border border-zinc-800 rounded-xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
+        exit={{ opacity: 0, scale: 0.97, y: 12 }}
+        className="bg-[#090a0f] border-2 border-zinc-700/80 rounded-xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
       >
-        {/* Linux Terminal Window Titlebar */}
-        <div className="px-4 py-3 bg-[#12131a] border-b border-zinc-800 flex items-center justify-between select-none">
-          {/* Linux window buttons */}
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[#ff5f56] inline-block border border-black/30 shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block border border-black/30 shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-[#27c93f] inline-block border border-black/30 shadow-sm" />
-            <span className="ml-3 text-[11px] text-zinc-400 font-mono flex items-center gap-1.5">
+        {/* Linux Terminal Window Chrome Titlebar */}
+        <div className="px-4 py-3 bg-[#13151f] border-b border-zinc-700/80 flex items-center justify-between select-none">
+          {/* Linux window buttons + Prompt Title */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#ef4444] inline-block border border-red-700 shadow-sm" />
+              <span className="w-3 h-3 rounded-full bg-[#f59e0b] inline-block border border-amber-700 shadow-sm" />
+              <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block border border-emerald-700 shadow-sm" />
+            </div>
+
+            <div className="flex items-center gap-2 pl-2 text-xs font-mono">
               <FiTerminal className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-400 font-bold">root@zeroops-sandbox</span>
-              <span className="text-zinc-600">:</span>
+              <span className="text-zinc-500">:</span>
               <span className="text-cyan-400 font-bold">/workspace</span>
-              <span className="text-zinc-600">#</span>
-            </span>
+              <span className="text-zinc-400">#</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 font-mono">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Alpine Linux 3.19
             </span>
             <button
               onClick={onClose}
               disabled={running}
               aria-label="Close terminal"
-              className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors disabled:opacity-40"
+              className="p-1 rounded-md hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors disabled:opacity-40"
             >
               <FiX className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Console Container */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#08090d]">
-          {/* Environment specifications */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-[11px]">
-            <div className="p-2.5 bg-[#0e1017] rounded-lg border border-zinc-800/80 flex items-center gap-2.5">
-              <FiTerminal className="w-4 h-4 text-emerald-400 shrink-0" />
-              <div>
-                <span className="text-zinc-500 uppercase tracking-wider block text-[9px]">Distro</span>
-                <span className="text-zinc-200 font-bold">Alpine Linux (x86_64)</span>
-              </div>
-            </div>
-            <div className="p-2.5 bg-[#0e1017] rounded-lg border border-zinc-800/80 flex items-center gap-2.5">
-              <FiCpu className="w-4 h-4 text-cyan-400 shrink-0" />
-              <div>
-                <span className="text-zinc-500 uppercase tracking-wider block text-[9px]">Engine</span>
-                <span className="text-zinc-200 font-bold">Terraform CLI in Docker</span>
-              </div>
-            </div>
-            <div className="p-2.5 bg-[#0e1017] rounded-lg border border-zinc-800/80 flex items-center gap-2.5">
-              <FiClock className="w-4 h-4 text-amber-400 shrink-0" />
-              <div>
-                <span className="text-zinc-500 uppercase tracking-wider block text-[9px]">Watchdog</span>
-                <span className="text-zinc-200 font-bold">120 Seconds Limit</span>
-              </div>
+        {/* Specifications & Telemetry Header */}
+        <div className="p-4 bg-[#0c0d14] border-b border-zinc-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-2.5 bg-black/60 rounded-lg border border-zinc-800 flex items-center gap-2.5">
+            <FiTerminal className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div>
+              <span className="text-zinc-400 font-bold uppercase tracking-wider block text-[9px]">Environment</span>
+              <span className="text-white font-bold">Alpine Linux 3.19</span>
             </div>
           </div>
+          <div className="p-2.5 bg-black/60 rounded-lg border border-zinc-800 flex items-center gap-2.5">
+            <FiCpu className="w-4 h-4 text-cyan-400 shrink-0" />
+            <div>
+              <span className="text-zinc-400 font-bold uppercase tracking-wider block text-[9px]">Binary</span>
+              <span className="text-white font-bold">Terraform v1.7.0 CLI</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-black/60 rounded-lg border border-zinc-800 flex items-center gap-2.5">
+            <FiClock className="w-4 h-4 text-amber-400 shrink-0" />
+            <div>
+              <span className="text-zinc-400 font-bold uppercase tracking-wider block text-[9px]">Watchdog</span>
+              <span className="text-white font-bold">5 Minutes Limit (300s)</span>
+            </div>
+          </div>
+        </div>
 
-          {/* xterm.js Terminal Container (Styled as authentic Linux shell) */}
-          <div className="border border-zinc-800/90 bg-[#08090d] rounded-lg overflow-hidden shadow-inner p-3 min-h-80">
+        {/* Linux Shell Terminal Window (Spacious, high contrast, fixed height) */}
+        <div className="flex-1 p-4 bg-[#050608] overflow-hidden flex flex-col">
+          <div className="border border-zinc-800 rounded-lg overflow-hidden bg-[#050608] p-3 shadow-inner h-95">
             <div ref={terminalRef} className="w-full h-full" />
           </div>
 
@@ -267,10 +280,10 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`p-4 rounded-lg border font-mono space-y-2.5 shadow-lg ${
+              className={`mt-4 p-4 rounded-lg border-2 font-mono space-y-2 shadow-lg ${
                 result.success
-                  ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-300"
-                  : "bg-rose-950/20 border-rose-500/40 text-rose-300"
+                  ? "bg-emerald-950/40 border-emerald-500/60 text-emerald-200"
+                  : "bg-rose-950/40 border-rose-500/60 text-rose-200"
               }`}
             >
               <div className="flex items-center gap-2">
@@ -286,24 +299,24 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
                 </h4>
               </div>
 
-              <div className="text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-2 text-zinc-300 pt-1 border-t border-white/5">
+              <div className="text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-2 text-zinc-200 pt-2 border-t border-white/10">
                 <div>
-                  <span className="text-zinc-500 font-bold uppercase tracking-wider text-[9px] block">
+                  <span className="text-zinc-400 font-bold uppercase tracking-wider text-[9px] block">
                     Version
                   </span>
-                  <span className="text-zinc-200">{tfVersion}</span>
+                  <span className="text-white font-bold">{tfVersion}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500 font-bold uppercase tracking-wider text-[9px] block">
+                  <span className="text-zinc-400 font-bold uppercase tracking-wider text-[9px] block">
                     Execution Time
                   </span>
-                  <span className="text-zinc-200">{duration} ms</span>
+                  <span className="text-white font-bold">{duration} ms</span>
                 </div>
               </div>
 
               {errorMsg && (
-                <div className="bg-[#0b0c10] border border-rose-500/20 p-3 rounded text-rose-400 text-xs leading-relaxed whitespace-pre-wrap select-text font-mono">
-                  <span className="font-bold text-rose-300 block mb-1 text-[9px] uppercase tracking-wider">
+                <div className="bg-black/80 border border-rose-500/40 p-3 rounded text-rose-300 text-xs leading-relaxed whitespace-pre-wrap select-text font-mono mt-2">
+                  <span className="font-bold text-rose-400 block mb-1 text-[10px] uppercase tracking-wider">
                     Build Failure Reason:
                   </span>
                   {errorMsg}
@@ -313,30 +326,31 @@ export function SandboxConsole({ code, onClose }: SandboxConsoleProps) {
           )}
         </div>
 
-        {/* Linux Terminal Status Bar Footer */}
-        <div className="px-5 py-3 border-t border-zinc-800 bg-[#0e1017] flex items-center justify-between">
-          <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-2">
+        {/* Linux Terminal Footer Status Bar */}
+        <div className="px-5 py-3 border-t border-zinc-800 bg-[#10121a] flex items-center justify-between select-none">
+          <div className="text-xs font-mono text-zinc-300 flex items-center gap-2">
             {running ? (
-              <span className="flex items-center gap-2 text-cyan-400 font-semibold">
-                <FiLoader className="w-3.5 h-3.5 animate-spin" />
-                <span>running terraform build check in container...</span>
+              <span className="flex items-center gap-2 text-cyan-300 font-bold">
+                <FiLoader className="w-4 h-4 animate-spin text-cyan-400" />
+                <span>Running terraform build verification in Linux container...</span>
               </span>
             ) : result ? (
-              <span className="text-zinc-400 flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${result.success ? "bg-emerald-400" : "bg-rose-400"}`} />
-                <span>Validation finished with code {result.success ? "0 (SUCCESS)" : "1 (BUILD_ERROR)"}</span>
+              <span className="text-zinc-200 flex items-center gap-2 font-bold">
+                <span className={`w-2.5 h-2.5 rounded-full ${result.success ? "bg-emerald-400" : "bg-rose-400"}`} />
+                <span>Validation Finished (Exit Code {result.success ? "0" : "1"})</span>
               </span>
             ) : (
-              <span className="text-zinc-500 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-zinc-600" />
-                <span>Shell Idle</span>
+              <span className="text-zinc-400 flex items-center gap-2 font-bold">
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-500" />
+                <span>Ready</span>
               </span>
             )}
           </div>
+
           <Button
             onClick={onClose}
             disabled={running}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-mono font-bold text-xs h-8 px-4 rounded-md border border-zinc-700 transition-colors"
+            className="bg-white hover:bg-zinc-200 text-black font-mono font-bold text-xs h-8 px-4 rounded-md shadow transition-colors disabled:opacity-40"
           >
             [ Close Console ]
           </Button>

@@ -170,7 +170,7 @@ function execCommand(
         Tty: true,
       });
 
-      const stream = await exec.start({});
+      const stream = await exec.start({ Tty: true });
       let stdout = "";
       let stderr = "";
 
@@ -213,7 +213,7 @@ export async function validateTerraformSandbox(
   onLog: (data: string) => void
 ): Promise<ValidationResult> {
   const startTime = Date.now();
-  const timeoutMs = parseInt(process.env.SANDBOX_TIMEOUT_MS || "120000", 10);
+  const timeoutMs = parseInt(process.env.SANDBOX_TIMEOUT_MS || "300000", 10);
   const containerName = `zeroops-sandbox-${crypto.randomBytes(4).toString("hex")}`;
 
   let container: Docker.Container | null = null;
@@ -234,7 +234,7 @@ export async function validateTerraformSandbox(
       Image: imageName,
       name: containerName,
       WorkingDir: "/workspace",
-      Entrypoint: ["tail", "-f", "/dev/null"],
+      Cmd: ["tail", "-f", "/dev/null"],
       HostConfig: {
         CpuPeriod: 100000,
         CpuQuota: 100000, // 1.0 CPU
